@@ -1,0 +1,10 @@
+What my program does so far:
+1) Makes scatterplots of words and returns most and least typical ngrams
+2) Gets
+
+What I still have to do:
+1) Prune common ngrams
+2) 
+
+Maybes:
+1) Build a shiny app?

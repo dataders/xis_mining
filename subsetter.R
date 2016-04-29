@@ -4,21 +4,25 @@ library(tm)
 library(tidyr)
 library(SnowballC)
 library(RWeka)
-#library(quanteda)
 source("Functions.R")
-setwd("~/Dropbox/ds/XIS data")
-report.path <- "t1 comments 4.csv"
+setwd("/Users/andersswanson/Desktop/comment\ mining")
 
+t1.report.path <-"data/t2 comments.csv"
+t2.report.path <-"data/t1 comments.csv"
+
+t1.report <- ReportsDFfromMBcsv(t1.report.path)
+t2.report <- ReportsDFfromMBcsv(t2.report.path)
 
 #read in reports csv and functions
-reports <- read.csv(report.path,
+t1.report <- read.csv(report1.path,
                     stringsAsFactors = FALSE,
                     encoding = "UTF-8")
-
+#rip Student.Comment column, turn it into a corpus and clean it 
 all.corpus <- reports$Student.Comment %>%
   ToCorpus() %>%
   CorpusClean()
 
+#tag each "document" (i.e. comment) in corpus using report information
 for (i in 1:nrow(reports)) {
   meta(all.corpus[[i]], tag = "teacher") <- reports$Teacher[i]
   meta(all.corpus[[i]], tag = "student ID") <- reports$Student.ID[i]
@@ -32,13 +36,5 @@ student.names <- reports$First.Name %>%
   removePunctuation() %>%
   tolower()
 
-all.corpus <- all.corpus %>%
-  tm_map(removeWords, student.names)
 
-for (i in length(all.corpus)) {
-  removeWords(all.corpus[i],)
-}
-
-Comp2All("teacher","Anders Swanson")
-Comp2All("student ID","10001901")
 
