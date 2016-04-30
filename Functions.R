@@ -14,6 +14,37 @@ ReportsDFfromMBcsv <- function(csv.path) {
 }
 
 
+
+#remove uppercase, punctuation, whitespace, & stopwords
+CorpusClean <- function(corpus) {
+        corpus.copy <- corpus
+        corpus %>% 
+                #tm_map(removeWords, student.names) %>%
+                tm_map(removePunctuation) %>%
+                tm_map(stripWhitespace) %>%
+                tm_map(content_transformer(tolower), lazy=TRUE)
+        #tm_map(removeWords, stopwords("en"))
+        #tm_map(stemDocument)
+        #tm_map(stemCompletion, dictionary = corpus.copy, type = "prevalent")
+}
+
+#rip Student.Comment column, turn it into a corpus and clean it 
+CorpusFromReportDF <- function(reportdf) {
+        corpus <- collect(select(reportdf, Student.Comment))[[1]] %>%
+                  VectorSource %>%
+                  Corpus %>%
+                  CorpusClean
+        
+        #tag each "document" (i.e. comment) in corpus using report information
+        for (i in 1:nrow(reportdf)) {
+                meta(corpus[[i]], tag = "teacher") <- reportdf[i,"Teacher"]
+                meta(corpus[[i]], tag = "student ID") <- reportdf[i,"Student.ID"]
+                meta(corpus[[i]], tag = "subject") <- reportdf[i, "Subject"]
+                meta(corpus[[i]], tag = "grade") <- reportdf[i,"Grade.Level"]
+        }
+        corpus
+}
+
 #given "teachers" or "students"
 #returns vector of comments for teacher or student in question
 GetCommentsGrouped <- function(group) {
@@ -37,25 +68,6 @@ GetCommentsGrouped <- function(group) {
         member.comments
 }
 
-#turn subset into a corpus
-ToCorpus <- function(comment.subset) {
-        comment.subset %>%
-                VectorSource() %>%
-                Corpus()
-}
-
-#remove uppercase, punctuation, whitespace, & stopwords
-CorpusClean <- function(corpus) {
-        corpus.copy <- corpus
-        corpus %>% 
-                #tm_map(removeWords, student.names) %>%
-                tm_map(removePunctuation) %>%
-                tm_map(stripWhitespace) %>%
-                tm_map(content_transformer(tolower), lazy=TRUE)
-        #tm_map(removeWords, stopwords("en"))
-        #tm_map(stemDocument)
-        #tm_map(stemCompletion, dictionary = corpus.copy, type = "prevalent")
-}
 
 #take teacher name as string and produce table and plot
 TeacherComp <- function(name) {
@@ -193,17 +205,17 @@ CompIndv2All <- function(role, identifier) {
         View(comp.freq)
 }
 
-Comp2All <- function(tag, identifier, ngram.min, ngram.max) {
-        idx <- all.corpus %>% meta(tag) == identifier
+Comp2All <- function(corpus, tag, identifier, ngram.min, ngram.max) {
+        idx <- corpus %>% meta(tag) == identifier
         
         DersTokenizer <- function(x) {
                 NGramTokenizer(x, Weka_control(min = ngram.min, max = ngram.max))
         }
-        indv.dtm <- all.corpus[idx] %>%
+        indv.dtm <- corpus[idx] %>%
                 DocumentTermMatrix(control=list(tokenize = DersTokenizer)) %>%
                 as.matrix
         
-        all.dtm <- all.corpus[!idx] %>%
+        all.dtm <- corpus[!idx] %>%
                 DocumentTermMatrix(control=list(tokenize = DersTokenizer)) %>%
                 as.matrix()
         
