@@ -1,7 +1,7 @@
 
 #takes file path of MB reports csv and returns a df w/
 #empty columns removed and comments split into class and student
-ReportsDFfromMBcsv <- function(csv.path) {
+GetReportsDFfromMBcsv <- function(csv.path) {
         df <- read.csv(csv.path,
                        stringsAsFactors = FALSE,
                        encoding = "UTF-8")
@@ -11,6 +11,10 @@ ReportsDFfromMBcsv <- function(csv.path) {
                                      c("Class.Comment", "Student.Comment"),
                                      sep = "\n", extra = "merge",
                                      remove = FALSE)
+        idx <- is.na(df$Student.Comment)
+        df$Student.Comment[idx] <- ""
+        df
+
 }
 
 
@@ -29,7 +33,7 @@ CorpusClean <- function(corpus) {
 }
 
 #rip Student.Comment column, turn it into a corpus and clean it 
-CorpusFromReportDF <- function(reportdf) {
+GetCorpusFromReportDF <- function(reportdf) {
         corpus <- collect(select(reportdf, Student.Comment))[[1]] %>%
                   VectorSource %>%
                   Corpus %>%
@@ -211,6 +215,7 @@ Comp2All <- function(corpus, tag, identifier, ngram.min, ngram.max) {
         DersTokenizer <- function(x) {
                 NGramTokenizer(x, Weka_control(min = ngram.min, max = ngram.max))
         }
+        #bug going on right here
         indv.dtm <- corpus[idx] %>%
                 DocumentTermMatrix(control=list(tokenize = DersTokenizer)) %>%
                 as.matrix
