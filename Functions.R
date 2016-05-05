@@ -1,23 +1,65 @@
 
-#takes file path of MB reports csv and returns a df w/
-#empty columns removed and comments split into class and student
+#takes file path of MB reports csv and returns a df w/empty columns removed;
+#splits: 1) comment in class and comments split into class and student
+#
 GetReportsDFfromMBcsv <- function(csv.path) {
+        #read report in from csv
         df <- read.csv(csv.path,
                        stringsAsFactors = FALSE,
-                       encoding = "UTF-8")
+                       encoding = "UTF-8",
+                       na.strings = c("N/A", NA))
+        
+        #filter out all entirely-NA columns
         df <- Filter(function(x) !all(is.na(x)), df)
         
+        #parse 2 paragraph comment into "Class-" and "Student-" comment columns
         df <- df %>% separate(Comments,
                                      c("Class.Comment", "Student.Comment"),
                                      sep = "\n", extra = "merge",
                                      remove = FALSE)
+        #to avoid Java NullPointer exception, convert NA's to ""
         idx <- is.na(df$Student.Comment)
         df$Student.Comment[idx] <- ""
-        df
-
+        
+        #separate "Criteria" column by Criterion
+        cols <- c("Cri.A","Cri.B","Cri.C","Cri.D")
+        df <- df %>% separate(Criteria,
+                 cols, sep=", ",
+                 remove = TRUE, convert = TRUE)
+        
+        #convert Criteria columns to integer and fix NA's 
+        for (i in 1:length(cols)) {
+                #get vectors from df columns
+                col.tmp <- collect(select_(df, cols[i]))[[1]]
+                
+                #index vector elements that are "N/A" and replace them with NA
+                idx <- col.tmp == "N/A"
+                col.tmp[idx] <- NA
+                #convert to integer
+                col.tmp <- as.integer(col.tmp)
+                #put temp col back into report
+                df[,cols[i]] <- col.tmp
+        }
+        
+        df$CriMean <- rowMeans(select(df, Cri.A:Cri.D), na.rm = TRUE)
+        df <- df %>% select(Student.ID, Last.Name, First.Name,
+                            Grade.Level, Subject, Teacher,
+                            Cri.A, Cri.B, Cri.C, Cri.D,
+                            Sum, CriMean, Student.Comment)
 }
 
 
+GetMeanBreakdownFromReport <- function(report) {
+        groupings <- c("Student.ID","Subject","Teacher","Grade.Level")
+        report.stats <- setNames(vector(mode = "list",
+                                        length = length(groupings)),
+                                 groupings)
+        for (i in groupings) {
+                report.stats[[i]] <- report %>% group_by_(i) %>%
+                        summarize( avg = mean(CriMean, na.rm = TRUE))  
+        }
+        report.stats
+}
 
 #remove uppercase, punctuation, whitespace, & stopwords
 CorpusClean <- function(corpus) {
@@ -71,7 +113,6 @@ GetCommentsGrouped <- function(group) {
         }
         member.comments
 }
-
 
 #take teacher name as string and produce table and plot
 TeacherComp <- function(name) {
@@ -209,6 +250,20 @@ CompIndv2All <- function(role, identifier) {
         View(comp.freq)
 }
 
+#format dtm of all student/teacher corpus as matrix
+#       w/ columns: ngram, tf-idf score, and
+#       sorted by tf-idf score
+GetNgramWeightMatrixfromDTM <- function(dtm) {
+        
+        freq.mat <- dtm %>%
+                colSums() %>%
+                sort(decreasing = TRUE) %>%
+                as.matrix() %>%
+                as.data.frame()
+        freq.mat$Words <- row.names(freq.mat)
+        freq.mat <- rename(freq.mat, freq = V1)
+}
+
 Comp2All <- function(corpus, tag, identifier, ngram.min, ngram.max) {
         idx <- corpus %>% meta(tag) == identifier
         
@@ -226,22 +281,11 @@ Comp2All <- function(corpus, tag, identifier, ngram.min, ngram.max) {
         
         
         # Make df of indv student words & Frequencies
-        indv.freq <- indv.dtm %>%
-                colSums() %>%
-                sort(decreasing = TRUE) %>%
-                as.matrix() %>%
-                as.data.frame()
-        indv.freq$Words <- row.names(indv.freq)
-        indv.freq <- rename(indv.freq, freq = V1)
+        GetNgramWeightMatrixfromDTM(indv.dtm)
+        
         
         #format dtm of all student/teacher corpus as sorted 2C table
-        all.freq <- all.dtm %>%
-                colSums() %>%
-                sort(decreasing = TRUE) %>%
-                as.matrix() %>%
-                as.data.frame()
-        all.freq$Words <- row.names(all.freq)
-        all.freq <- rename(all.freq, freq = V1)
+        GetNgramWeightMatrixfromDTM(indv.dtm)
         
         #create a comparison table using only words indv used at least once
         comp.freq <- indv.freq %>%
@@ -291,18 +335,14 @@ GetIndvTfIdf <- function(group, identifier, nmin, nmax) {
         
         idx <- match(identifier, names(group.comments))
         
+        # Sets the default number of threads to use
+        options(mc.cores=1)
+        
         a.dtm <- DocumentTermMatrix(group.corpus, control=list(
                 tokenize = DersTokenizer,
                 weighting = tfidf))
         
         a.mat <- a.dtm[idx,] %>% as.matrix
         
-        a.freq <- a.mat %>%
-                colSums() %>%
-                sort(decreasing = TRUE) %>%
-                as.matrix() %>%
-                as.data.frame()
-        a.freq$Words <- row.names(a.freq)
-        a.freq <- rename(a.freq, freq = V1)
-        a.freq
+        a.freq <-  GetNgramWeightMatrixfromDTM(a.mat) 
 }
