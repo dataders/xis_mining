@@ -50,7 +50,8 @@ GetReportsDFfromMBcsv <- function(csv.path) {
 
 
 GetMeanBreakdownFromReport <- function(report) {
-        groupings <- c("Student.ID","Subject","Teacher","Grade.Level")
+        groupings <- c("Student.ID","Subject","Teacher",
+                       "Grade.Level", "class.growth")
         report.stats <- setNames(vector(mode = "list",
                                         length = length(groupings)),
                                  groupings)
