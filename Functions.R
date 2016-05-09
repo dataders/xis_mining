@@ -1,3 +1,9 @@
+#load required libraries, data, and created functions
+library(dplyr)
+library(tm)
+library(tidyr)
+library(SnowballC)
+library(RWeka)
 
 #takes file path of MB reports csv and returns a df w/empty columns removed;
 #splits: 1) comment in class and comments split into class and student
@@ -63,15 +69,15 @@ GetMeanBreakdownFromReport <- function(report) {
 }
 
 #remove uppercase, punctuation, whitespace, & stopwords
-CorpusClean <- function(corpus) {
+CorpusCleanStem <- function(corpus) {
         corpus.copy <- corpus
         corpus %>% 
                 #tm_map(removeWords, student.names) %>%
                 tm_map(removePunctuation) %>%
                 tm_map(stripWhitespace) %>%
-                tm_map(content_transformer(tolower), lazy=TRUE)
-        #tm_map(removeWords, stopwords("en"))
-        #tm_map(stemDocument)
+                tm_map(content_transformer(tolower), lazy=TRUE) %>%
+                tm_map(removeWords, stopwords("en")) %>%
+                tm_map(stemDocument, language = "en")
         #tm_map(stemCompletion, dictionary = corpus.copy, type = "prevalent")
 }
 
@@ -80,7 +86,7 @@ GetCorpusFromReportDF <- function(reportdf) {
         corpus <- collect(select(reportdf, Student.Comment))[[1]] %>%
                   VectorSource %>%
                   Corpus %>%
-                  CorpusClean
+                  CorpusCleanStem
         
         #tag each "document" (i.e. comment) in corpus using report information
         for (i in 1:nrow(reportdf)) {

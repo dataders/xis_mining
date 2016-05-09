@@ -1,0 +1,12 @@
+Scope:
+
+Come up with a percentage of student comments that reference key words for each skill cluster.
+
+How
+1) Get corpus of T1 & T2 comments
+2) Clean the corpus (stem and stop words)
+3) Make “dictionaries” of skill cluster words
+	a) make a corpus where document = 1 cluster’s words
+	b) clean the corpus (stem and stop words)
+4) Make TermDocument Matrix (binary weighting)
+5) GetNgramWeightMatrixfromDTM

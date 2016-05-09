@@ -4,8 +4,9 @@ library(tm)
 library(tidyr)
 library(SnowballC)
 library(RWeka)
-source("Functions.R")
+
 setwd("/Users/andersswanson/Desktop/comment\ mining")
+source("Functions.R")
 
 t1.report.path <-"data/t1 comments.csv"
 t2.report.path <-"data/t2 comments.csv"
