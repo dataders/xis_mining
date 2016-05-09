@@ -12,7 +12,7 @@ CorpusClean <- function(corpus) {
                 tm_map(removePunctuation) %>%
                 tm_map(stripWhitespace) %>%
                 tm_map(content_transformer(tolower), lazy=FALSE) %>%
-                tm_map(removeWords, stopwords("en")) %>%
+                # tm_map(removeWords, stopwords("en")) %>%
                 tm_map(stemDocument, language = "en")
 }
 
@@ -23,31 +23,11 @@ CorpusClean_mod <- function(corpus) {
                 tm_map(removePunctuation) %>%
                 tm_map(stripWhitespace) %>%
                 tm_map(content_transformer(tolower), lazy=FALSE) %>%
-                tm_map(removeWords, stopwords("en")) %>%
+                # tm_map(removeWords, stopwords("en")) %>%
                 tm_map(stemDocument)  %>% 
                 tm_map(content_transformer(function(x, corpus.copy) paste(
                         stemCompletion(strsplit(stemDocument(x), ' ')[[1]], corpus.copy),
                         collapse = ' ')), corpus.copy)
-}
-
-#broken?!?!
-CorpusClean_mod2 <- function(corpus) {
-        options(mc.cores=1)
-        stemCompletion_mod <- function(x,dict=corpus.copy) {
-                PlainTextDocument(stripWhitespace(
-                        paste(
-                                stemCompletion(unlist(strsplit(as.character(x)," ")),
-                                               dictionary=dict, type="shortest"),
-                                sep="", collapse=" ")))
-        }
-        corpus.copy <- corpus
-        corpus %>%
-                tm_map(removePunctuation) %>%
-                tm_map(stripWhitespace) %>%
-                tm_map(content_transformer(tolower), lazy=FALSE) %>%
-                tm_map(removeWords, stopwords("en")) %>%
-                tm_map(stemDocument)  %>% 
-                tm_map(stemCompletion_mod(corpus, dict=corpus.copy))
 }
 
 
@@ -94,6 +74,18 @@ topn <- function(dtm, num) {
                 cluster.topn[[i]] <- top10
         }
         cluster.topn
+}
+
+#weighting functions
+tfidf <- function(x) {
+        weightTfIdf(x, normalize = TRUE)
+}
+
+#gets totals for dict words from corpus
+GetDictTotalsfromCorpus <- function(corpus, dict) {
+        ref <- DocumentTermMatrix(corpus, list(dictionary = dict))
+        sums <- ref %>% as.matrix %>% colSums
+        sums
 }
 
 skill.clusters <- c(
@@ -290,5 +282,6 @@ Using skills and knowledge in multiple contexts
 
 
 cluster.names <- c("Communication","Collaboration","Organization","Affective","Reflection","Information Literacy","Media Literacy","Critical Thinking","Creative Thinking","Transfer")
-
+cluster.names.stemmed <- c("communic", "collabor", "organ", "affect", "reflect", "inform", 
+                           "media", "critic", "creativ", "transfer")
 atls.vector <- setNames(skill.clusters, cluster.names)
