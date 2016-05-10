@@ -139,6 +139,9 @@ GetNgramWeightMatrixfromDTM <- function(dtm) {
 Comp2All <- function(corpus, tag, identifier, ngram.min, ngram.max) {
         idx <- corpus %>% meta(tag) == identifier
         
+        # Sets the default number of threads to use
+        options(mc.cores=1)
+        
         DersTokenizer <- function(x) {
                 NGramTokenizer(x, Weka_control(min = ngram.min, max = ngram.max))
         }
@@ -153,11 +156,11 @@ Comp2All <- function(corpus, tag, identifier, ngram.min, ngram.max) {
         
         
         # Make df of indv student words & Frequencies
-        GetNgramWeightMatrixfromDTM(indv.dtm)
+        indv.freq <- GetNgramWeightMatrixfromDTM(indv.dtm)
         
         
         #format dtm of all student/teacher corpus as sorted 2C table
-        GetNgramWeightMatrixfromDTM(all.dtm)
+        all.freq <- GetNgramWeightMatrixfromDTM(all.dtm)
         
         #create a comparison table using only words indv used at least once
         comp.freq <- indv.freq %>%
@@ -192,7 +195,7 @@ Comp2All <- function(corpus, tag, identifier, ngram.min, ngram.max) {
 
 GetIndvTfIdf <- function(group, identifier, nmin, nmax) {
         
-        group.comments <- GetComments(group)
+        group.comments <- GetCommentsGrouped(group)
         
         # Make a corpus and clean it w/ pre-defined functions
         group.corpus <- ToCorpus(group.comments)
