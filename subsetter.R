@@ -8,33 +8,15 @@ library(RWeka)
 setwd("/Users/andersswanson/Desktop/comment\ mining")
 source("Functions.R")
 
-t1.report.path <-"data/t1 comments.csv"
-t2.report.path <-"data/t2 comments.csv"
-
-t1.report <- ReportsDFfromMBcsv(t1.report.path)
-t2.report <- ReportsDFfromMBcsv(t2.report.path)
-
-t12.report <- c(t1.report,t2.report)
-
-paths <- c(t1.report.path, t2.report.path)
-
-reports <- lapply(paths,ReportsDFfromMBcsv)
-
-corpora <- lapply(reports, CorpusFromReportDF)
-
-t12.corpus <- c(corpora, corpora)
-
-#test to check new functions
-t1.report.path <-"data/t1 comments.csv"
-t1.report <- ReportsDFfromMBcsv(t1.report.path)
-t1.corpus <- CorpusFromReportDF(t1.report)
-
-t2.report.path <-"data/t2 comments.csv"
-t2.report <- ReportsDFfromMBcsv(t2.report.path)
-t2.corpus <- CorpusFromReportDF(t2.report)
-
+#get corpus of T1 and T2 comments, c() T1 and T2 corpora
+t1.corpus <- GetReportsDFfromMBcsv("data/t1 comments.csv") %>%
+        GetCorpusFromReportDF
+t2.corpus <- GetReportsDFfromMBcsv("data/t2 comments.csv") %>%
+        GetCorpusFromReportDF
 t12.corpus <- c(t1.corpus,t2.corpus)
+rm(t1.corpus, t2.corpus)
 
+#test
 idx <- meta(t12.corpus, "teacher") == "Anders Swanson"
 t1.corpus[idx]
 
@@ -50,7 +32,7 @@ indv.dtm <- t1.corpus[idx] %>%
         DocumentTermMatrix(control=list(tokenize = DersTokenizer)) %>%
         as.matrix
 
-Comp2All(t1.corpus, "teacher", "Anders Swanson",2,2)
+Comp2All(t12.corpus, "teacher", "Anders Swanson",2,2)
 
 
 #strip student names from each comment
