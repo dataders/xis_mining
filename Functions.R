@@ -98,28 +98,36 @@ GetCorpusFromReportDF <- function(reportdf) {
         corpus
 }
 
-#given "teachers" or "students"
-#returns vector of comments for teacher or student in question
-GetCommentsGrouped <- function(group) {
+#' GetGroupCorpusfromCommentCorpus
+#'      (revamp of GetCommentsGrouped)
+#' 
+#' ARGS corpus:a comment corpus where each document 
+#'              (e.g. the output of GetCorpusFromReportDF)
+#'      group: which grouping that you would like to try
+#' OUTPUT: get corpus where each document is a member of a group
+#' (e.g. "English" is a member of "subject")
+GetGroupCorpusfromCommentCorpus <- function(corpus, group) {
         
-        column.name <- setNames(c("Student.ID","Teacher","Subject","Grade.Level"),
-                                c("students", "teachers", "subject", "grade"))
-        
-        reports2 <- read.csv(report.path, stringsAsFactors=TRUE)
-        members <- levels(reports2[[column.name]])
-        member.comments <- vector("list", length(members))
-        names(member.comments) <- members
-        
+        #get members of given group and initialize comments vector
+        members <- unique(meta(corpus, group))
+        member.comments <- setNames(vector("list", length(members)),
+                                    members)
+        #for each group member:
+        #       1) get idx of all comments attributed to member
+        #       2) assign a paste above member comments to comments vector
         for (i in members) {
-                
-                sub <- reports %>% filter(
-                        get(column.name, envir=as.environment(reports))==i)
-                
-                member.comments[i] <- sub$Student.Comment %>%
-                        paste(collapse = " ")
+                idx <- corpus %>% meta(group) == i
+                member.comments[[i]] <- do.call(paste, content(corpus[idx]))
         }
-        member.comments
+        #make a corpus out of member.comments
+        member.corpus <- VectorSource(member.comments) %>% Corpus
+        #retag corpus with group member ID
+        for (i in 1:length(member.corpus)) {
+                meta(member.corpus[[i]], tag = group) <- members[[i]]
+        }
+        member.corpus
 }
+
 
 
 #format dtm of all student/teacher corpus as matrix
@@ -221,3 +229,28 @@ GetIndvTfIdf <- function(group, identifier, nmin, nmax) {
         
         a.freq <-  GetNgramWeightMatrixfromDTM(a.mat) 
 }
+
+#' Calculate age
+#' 
+#' By default, calculates the typical "age in years", with a
+#' \code{floor} applied so that you are, e.g., 5 years old from
+#' 5th birthday through the day before your 6th birthday. Set
+#' \code{floor = FALSE} to return decimal ages, and change \code{units}
+#' for units other than years.
+#' @param dob date-of-birth, the day to start calculating age.
+#' @param age.day the date on which age is to be calculated.
+#' @param units unit to measure age in. Defaults to \code{"years"}. Passed to \link{\code{duration}}.
+#' @param floor boolean for whether or not to floor the result. Defaults to \code{TRUE}.
+#' @return Age in \code{units}. Will be an integer if \code{floor = TRUE}.
+#' @examples
+#' my.dob <- as.Date('1983-10-20')
+#' age(my.dob)
+#' age(my.dob, units = "minutes")
+#' age(my.dob, floor = FALSE)
+age <- function(dob, age.day = today(), units = "years", floor = TRUE) {
+        calc.age = new_interval(dob, age.day) / duration(num = 1, units = units)
+        if (floor) return(as.integer(floor(calc.age)))
+        return(calc.age)
+}
+
+
