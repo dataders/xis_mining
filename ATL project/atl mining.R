@@ -39,6 +39,7 @@ for (i in 1:length(cluster.top10)) {
         cluster.top10.words[[i]] <- names(cluster.top10[[i]])
 }
 
+GetDictTotalsfromCorpus(t12.corpus,cluster.top10.words$`Critical Thinking`)
 
 # kill anything ending in "and" "or" "of" "with"
 run.ons <- c("and", "or", "of", "with")
@@ -49,5 +50,3 @@ transfer.phrases[!idx]
 
 m <- str_match_all( transfer.phrases, "\\S+" )  # Sequences of non-spaces
 length(m[[1]])
-
-m <- str_match_all( c("sube a nacer conmigo hermano","el eterno retorno"), "\\S+" )
