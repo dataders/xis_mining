@@ -8,6 +8,8 @@ library(tidyr)
 library(SnowballC)
 library(RWeka)
 library(xlsx)
+library(lubridate)
+library(ggplot2)
 
 # ManageBac ---------------------------------------------------------------
 
@@ -287,7 +289,7 @@ GetStudentDBfromAPxlsx <- function(xlsxpath) {
         #take out unneeded columns
         xis.db <- xis.db %>% select(Student.ID = UNIQUE.ID, LAST.NAME, FIRST.NAME,
                                     GRADE.LEVEL, HOMEROOM, HOUSE, GENDER, NATIONALITY,
-                                    BIRTH.DATE, Age, ENTRY.DAY.1, X1st.Language,
+                                    BIRTH.DATE, Age, ENTRY.DAY.1, Years.at.XIS, X1st.Language,
                                     X2nd.Language, Language..home, Mother.speaks,
                                     Father.speaks, SCHOOL.BUS, Language.Suppor,
                                     Conditional.Pla, Program, LAST.SCHOOL.ATT,Tuition.Paid.by)
