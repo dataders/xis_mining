@@ -1,9 +1,17 @@
+
+# Dependencies ------------------------------------------------------------
+
 #load required libraries, data, and created functions
 library(dplyr)
 library(tm)
 library(tidyr)
 library(SnowballC)
 library(RWeka)
+library(xlsx)
+
+# ManageBac ---------------------------------------------------------------
+
+
 
 #takes file path of MB reports csv and returns a df w/empty columns removed;
 #splits: 1) comment in class and comments split into class and student
@@ -150,7 +158,7 @@ Comp2All <- function(corpus, tag, identifier, ngram.min, ngram.max) {
         # Sets the default number of threads to use
         options(mc.cores=1)
         
-        DersTokenizer <- function(x) {
+        DersTokenizer <- function(x, ngram.min, ngram.max) {
                 NGramTokenizer(x, Weka_control(min = ngram.min, max = ngram.max))
         }
         #bug going on right here
@@ -230,6 +238,9 @@ GetIndvTfIdf <- function(group, identifier, nmin, nmax) {
         a.freq <-  GetNgramWeightMatrixfromDTM(a.mat) 
 }
 
+
+# Admin Plus --------------------------------------------------------------
+
 #' Calculate age
 #' 
 #' By default, calculates the typical "age in years", with a
@@ -251,6 +262,74 @@ age <- function(dob, age.day = today(), units = "years", floor = TRUE) {
         calc.age = new_interval(dob, age.day) / duration(num = 1, units = units)
         if (floor) return(as.integer(floor(calc.age)))
         return(calc.age)
+}
+
+#takes AdminPlus database export and strips unecessary columns
+#lubridates, and filters out MYP and DP students
+GetStudentDBfromAPxlsx <- function(xlsxpath) {
+        #read in xlsx admin plus database, assign NA to empty chr, rm empty columns
+        xis.db <- read.xlsx2(xlsxpath, sheetIndex = 1, startRow = 4,
+                             header= TRUE, colIndex = 1:250)
+        xis.db[ xis.db == "" ] <- NA
+        xis.db <- Filter(function(x)!all(is.na(x)), xis.db)
+        
+        #lubridate and make "Age" and "Years.at.XIS" columns
+        xis.db$BIRTH.DATE <- gsub("?","",xis.db$BIRTH.DATE, fixed = TRUE)  %>% dmy()
+        xis.db$ENTRY.DAY.1 <- ymd(xis.db$ENTRY.DAY.1, quiet = TRUE)
+        xis.db <- xis.db  %>% 
+                mutate(Age = as.period(interval(start = BIRTH.DATE,
+                                                end = today())),
+                       Years.at.XIS = as.period(interval(start = ENTRY.DAY.1,
+                                                         end = today())))
+        
+        
+        #take out unneeded columns
+        xis.db <- xis.db %>% select(Student.ID = UNIQUE.ID, LAST.NAME, FIRST.NAME,
+                                    GRADE.LEVEL, HOMEROOM, HOUSE, GENDER, NATIONALITY,
+                                    BIRTH.DATE, Age, ENTRY.DAY.1, X1st.Language,
+                                    X2nd.Language, Language..home, Mother.speaks,
+                                    Father.speaks, SCHOOL.BUS, Language.Suppor,
+                                    Conditional.Pla, Program, LAST.SCHOOL.ATT,Tuition.Paid.by)
+        
+        #1) filter out PK and K, 2) convert GRADE.LEVEL to numeric,
+        #3) FILTER OUT PYP and DP
+        # xis.db <- xis.db %>% filter(GRADE.LEVEL != "PK" & GRADE.LEVEL != "0K")
+        # grade <- xis.db$GRADE.LEVEL
+        # xis.db$GRADE.LEVEL <- suppressWarnings(as.numeric(levels(grade))[grade])
+        # xis.db <- xis.db %>% filter(GRADE.LEVEL <= 10 & GRADE.LEVEL >= 6)
+}
+
+
+# MAP ---------------------------------------------------------------------
+
+GetMAPbyID <- function(map.path) {
+        map.df <- read.csv(map.path) %>%
+                select(Student.ID = StudentID, Discipline, RITScore= TestRITScore,
+                       StandardError = TestStandardError, Percentile =TestPercentile,
+                       TypicalFallToFallGrowth,
+                       Goal1Name, Goal1RitScore, Goal1StdErr,
+                       Goal2Name, Goal2RitScore, Goal2StdErr,
+                       Goal3Name, Goal3RitScore, Goal3StdErr,
+                       Goal4Name, Goal4RitScore, Goal4StdErr) %>%
+                #convert Student.ID column to factor
+                mutate_each(funs(factor), Student.ID) %>%
+                #hack to take out duplicate tests and "uncombined" test results
+                slice(-c(9,34,473)) %>%
+                slice(-c(365, 366, 519, 520, 637, 638, 655, 656, 904, 905))
+        
+        #get column of only "TestRIT
+        cols <- colnames(map.df)[3:6]
+        
+        map.df <- map.df %>% 
+                select(Student.ID:TypicalFallToFallGrowth) %>%
+                unite(temp, RITScore:TypicalFallToFallGrowth, sep = "_") %>%
+                spread(Discipline, temp) %>%
+                separate("Language Usage", paste("Lang", cols, sep = "_"),
+                         sep = "_", remove = TRUE) %>%
+                separate("Mathematics", paste("Math", cols, sep = "_"),
+                         sep = "_", remove = TRUE) %>%
+                separate("Reading", paste("Read", cols, sep = "_"),
+                         sep = "_", remove = TRUE)
 }
 
 
