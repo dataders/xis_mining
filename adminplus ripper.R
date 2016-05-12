@@ -38,13 +38,21 @@ GetStudentDBfromAPxlsx <- function(xlsxpath) {
         
         #1) filter out PK and K, 2) convert GRADE.LEVEL to numeric,
         #3) FILTER OUT PYP and DP
-        xis.db <- xis.db %>% filter(GRADE.LEVEL != "PK" & GRADE.LEVEL != "0K")
-        grade <- xis.db$GRADE.LEVEL
-        xis.db$GRADE.LEVEL <- suppressWarnings(as.numeric(levels(grade))[grade])
-        xis.db <- xis.db %>% filter(GRADE.LEVEL <= 10 & GRADE.LEVEL >= 6)
+        # xis.db <- xis.db %>% filter(GRADE.LEVEL != "PK" & GRADE.LEVEL != "0K")
+        # grade <- xis.db$GRADE.LEVEL
+        # xis.db$GRADE.LEVEL <- suppressWarnings(as.numeric(levels(grade))[grade])
+        # xis.db <- xis.db %>% filter(GRADE.LEVEL <= 10 & GRADE.LEVEL >= 6)
 }
 
 xis.db <- GetStudentDBfromAPxlsx(db.path)
+
+
+xis.db <- xis.db  %>% 
+        mutate(Age = as.period(interval(start = BIRTH.DATE,
+                                        end = today())),
+               Years.at.XIS = as.period(interval(start = ENTRY.DAY.1,
+                                                 end = today())))
+
 xis.db <- xis.db %>% separate(Language..home,
                               c("language.home1", "language.home2", "language.home3"),
                               sep = "/",
