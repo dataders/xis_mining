@@ -59,7 +59,8 @@ GetReportsDFfromMBcsv <- function(csv.path) {
         df <- df %>% select(Student.ID, Last.Name, First.Name,
                             Grade.Level, Subject, Teacher,
                             Cri.A, Cri.B, Cri.C, Cri.D,
-                            Sum, CriMean, Student.Comment)
+                            Sum, CriMean, Student.Comment) %>%
+                mutate_each(funs(factor), Student.ID)
 }
 
 
