@@ -4,6 +4,7 @@ library(tm)
 library(tidyr)
 library(SnowballC)
 library(RWeka)
+library(xlsx)
 
 
 #set wd and paths and source functions
@@ -30,6 +31,7 @@ t12.report.byID <- t12.report %>% group_by(Student.ID) %>%
         summarize( class.growth.avg = mean(class.growth, na.rm = TRUE))
         
 
+
 #finding student mean Cri score increase from T1 to T2
 t1.grades.stats <- GetMeanBreakdownFromReport(t1.report)
 t2.grades.stats <- GetMeanBreakdownFromReport(t2.report)
@@ -38,3 +40,13 @@ t12.grades.stats <- right_join(t1.grades.stats[[1]], t2.grades.stats[[1]],
                                by = "Student.ID") %>%
                         select(Student.ID, t1.avg = avg.x, t2.avg = avg.y) %>%
                         mutate(overall.growth = t2.avg - t1.avg)
+
+by.teacher <- t12.report %>% group_by(Teacher) %>%
+        summarise(CriMean.t1 = mean(CriMean.t1, na.rm = TRUE), CriMean.t2 = mean(CriMean.t2, na.rm = TRUE),
+                  avg.growth =mean(class.growth, na.rm = TRUE))
+by.subject <- t12.report %>% group_by(Subject) %>%
+        summarise(CriMean.t1 = mean(CriMean.t1, na.rm = TRUE), CriMean.t2 = mean(CriMean.t2, na.rm = TRUE),
+                  avg.growth =mean(class.growth, na.rm = TRUE))
+by.grade <- t12.report %>% group_by(Grade.Level) %>%
+        summarise(CriMean.t1 = mean(CriMean.t1, na.rm = TRUE), CriMean.t2 = mean(CriMean.t2, na.rm = TRUE),
+                  avg.growth =mean(class.growth, na.rm = TRUE))
