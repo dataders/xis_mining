@@ -11,7 +11,7 @@ library(xlsx)
 library(lubridate)
 library(ggplot2)
 
-# ManageBac ---------------------------------------------------------------
+# ManageBac Reports---------------------------------------------------------
 
 
 #takes file path of MB reports csv and returns a df w/empty columns removed;
@@ -84,17 +84,29 @@ GetMeanBreakdownFromReport <- function(report) {
         report.stats
 }
 
+
+# Corpora: Creation and Cleaning ------------------------------------------
+
+
+
 #remove uppercase, punctuation, whitespace, & stopwords
-CorpusCleanStem <- function(corpus) {
-        corpus.copy <- corpus
-        corpus %>% 
-                #tm_map(removeWords, student.names) %>%
+CorpusClean <- function(corpus, stop = FALSE, stem = FALSE, complete = FALSE) {
+        corpus <- corpus %>% 
                 tm_map(removePunctuation) %>%
                 tm_map(stripWhitespace) %>%
                 tm_map(content_transformer(tolower), lazy=TRUE) %>%
-                tm_map(removeWords, stopwords("en")) %>%
-                tm_map(stemDocument, language = "en")
-        #tm_map(stemCompletion, dictionary = corpus.copy, type = "prevalent")
+                
+        if (stop == TRUE) {
+                corpus <- corpus %>% tm_map(removeWords, stopwords("en"))
+        }        
+        if (stem == TRUE) {
+                corpus <- corpus %>% tm_map(stemDocument, language = "en")
+        }
+        if (complete == TRUE) {
+                corpus <- corpus %>% 
+                        tm_map(stemCompletion, dictionary = corpus.copy, type = "prevalent")
+        }
+        corpus
 }
 
 #rip Student.Comment column, turn it into a corpus and clean it 
@@ -146,6 +158,7 @@ GetGroupCorpusfromCommentCorpus <- function(corpus, group) {
 }
 
 
+# Corpora: text analytics -------------------------------------------------
 
 #format dtm of all student/teacher corpus as matrix
 #       w/ columns: ngram, tf-idf score, and
