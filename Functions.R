@@ -28,11 +28,18 @@ GetReportsDFfromMBcsv <- function(csv.path) {
         #filter out all entirely-NA columns
         df <- Filter(function(x) !all(is.na(x)), df)
         
+        #filter out rows with empty Teacher of Student.ID 
+        idx1 <- nchar(df$Teacher) == 0
+        idx2 <- is.na(df$Student.ID)
+        df <- df[!(idx1 | idx2),]
+        
         #parse 2 paragraph comment into "Class-" and "Student-" comment columns
         df <- df %>% separate(Comments,
                                      c("Class.Comment", "Student.Comment"),
                                      sep = "\n", extra = "merge",
                                      remove = FALSE)
+        
+        
         #to avoid Java NullPointer exception, convert NA's to ""
         idx <- is.na(df$Student.Comment)
         df$Student.Comment[idx] <- ""
@@ -130,6 +137,7 @@ GetGroupCorpusfromCommentCorpus <- function(corpus, group) {
                 idx <- corpus %>% meta(group) == i
                 member.comments[[i]] <- do.call(paste, content(corpus[idx]))
         }
+        browser()
         #make a corpus out of member.comments
         member.corpus <- VectorSource(member.comments) %>% Corpus
         #retag corpus with group member ID

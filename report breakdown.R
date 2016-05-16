@@ -1,21 +1,6 @@
-#load required libraries, data, and created functions
-library(dplyr)
-library(tm)
-library(tidyr)
-library(SnowballC)
-library(RWeka)
-library(xlsx)
-
-
-#set wd and paths and source functions
-source("Functions.R")
-setwd("/Users/andersswanson/Desktop/comment\ mining")
-t1.report.path <-"data/t1 comments.csv"
-t2.report.path <-"data/t2 comments.csv"
-
 #load MB reports
-t1.report <- GetReportsDFfromMBcsv(t1.report.path)
-t2.report <- GetReportsDFfromMBcsv(t2.report.path)
+t1.report <- GetReportsDFfromMBcsv("data/t1 comments.csv")
+t2.report <- GetReportsDFfromMBcsv("data/t2 comments.csv")
 
 #finding subset comments where student made improvement
 by.cols <- c("Student.ID", "Last.Name", "First.Name",

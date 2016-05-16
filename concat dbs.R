@@ -1,6 +1,3 @@
-library(ggplot2)
-
-
 setwd("/Users/andersswanson/Desktop/comment\ mining")
 source("Functions.R")
 
@@ -37,6 +34,7 @@ t12.report.byID <- t12.report %>% group_by(Student.ID) %>%
 
 #joining!
 MB.MAP.db <- inner_join(t12.report.byID, MAP.df, by="Student.ID")
+sec.y <- 60*60*24*365
 all <- right_join(xis.db, MB.MAP.db, by="Student.ID") %>%
         mutate(
                 Age = as.period(interval(start = BIRTH.DATE,
@@ -47,6 +45,9 @@ all <- right_join(xis.db, MB.MAP.db, by="Student.ID") %>%
         mutate_each(funs(as.numeric), starts_with("Math")) %>%
         mutate_each(funs(as.numeric), starts_with("Lang")) %>%
         mutate_each(funs(as.numeric), starts_with("Read")) %>%
-        mutate(career_pct = 100 * Years.at.XIS / (Age - 4))
+        mutate(career_pct = 100 * Years.at.XIS / (Age - 4),
+               Years.XIS.int = period_to_seconds(Years.at.XIS)/sec.y)
+               
+
 
 

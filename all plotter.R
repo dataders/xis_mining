@@ -11,19 +11,21 @@ g.all <- all %>% filter(GRADE.LEVEL == 6) %>%
 ind <- paste("career_pct")
 dep <- paste("Math_Percentile")
 
-thing <- lm(career_pct ~ Math_Percentile, all)
+all.4countries <- all %>% filter(NATIONALITY == "Taiwan" | NATIONALITY == "Korean" | NATIONALITY =="HK" | NATIONALITY == "USA")
 
-ggplot(all, aes(x=career_pct, y=Math_Percentile)) +
+thing <- lm(career_pct ~ Read_RITScore, all)
+
+ggplot(all, aes(x=career_pct, y=Read_RITScore)) +
         geom_point() +    # Use hollow circles
         scale_fill_brewer( palette = "Blues") + # Use a slightly darker palette than normal
-        geom_smooth(method=lm,   # Add linear regression lines
-                    se=FALSE,    # Don't add shaded confidence region
-                    fullrange=TRUE) + # Extend regression lines
-        geom_text(x = 200000000, y = 255,
-                  label = lm_eqn(thing), parse = TRUE) + 
+        # geom_smooth(method=lm,   # Add linear regression lines
+        #             se=FALSE,    # Don't add shaded confidence region
+        #             fullrange=TRUE) + # Extend regression lines
+        # geom_text(x = 20, y = 260,
+        #           label = lm_eqn(thing), parse = TRUE) +
         facet_wrap(~GRADE.LEVEL)
 
-ggsave("figures/lang_rit_bygrade.png", width = 6, height = 6)
+ggsave("figures/mat_RITpct_bycountry.png", width = 6, height = 6)
 
 lm_eqn = function(m) {
         
