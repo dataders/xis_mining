@@ -1,4 +1,4 @@
-
+#author = Anders Swanson
 # Dependencies ------------------------------------------------------------
 
 #load required libraries, data, and created functions
@@ -12,7 +12,6 @@ library(lubridate)
 library(ggplot2)
 
 # ManageBac ---------------------------------------------------------------
-
 
 
 #takes file path of MB reports csv and returns a df w/empty columns removed;
@@ -38,7 +37,6 @@ GetReportsDFfromMBcsv <- function(csv.path) {
                                      c("Class.Comment", "Student.Comment"),
                                      sep = "\n", extra = "merge",
                                      remove = FALSE)
-        
         
         #to avoid Java NullPointer exception, convert NA's to ""
         idx <- is.na(df$Student.Comment)
@@ -137,7 +135,7 @@ GetGroupCorpusfromCommentCorpus <- function(corpus, group) {
                 idx <- corpus %>% meta(group) == i
                 member.comments[[i]] <- do.call(paste, content(corpus[idx]))
         }
-        browser()
+
         #make a corpus out of member.comments
         member.corpus <- VectorSource(member.comments) %>% Corpus
         #retag corpus with group member ID
