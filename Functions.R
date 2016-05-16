@@ -70,7 +70,6 @@ GetReportsDFfromMBcsv <- function(csv.path) {
                 mutate_each(funs(factor), Student.ID)
 }
 
-
 GetMeanBreakdownFromReport <- function(report) {
         groupings <- c("Student.ID","Subject","Teacher",
                        "Grade.Level", "class.growth")
@@ -84,17 +83,14 @@ GetMeanBreakdownFromReport <- function(report) {
         report.stats
 }
 
-
 # Corpora: Creation and Cleaning ------------------------------------------
-
-
 
 #remove uppercase, punctuation, whitespace, & stopwords
 CorpusClean <- function(corpus, stop = FALSE, stem = FALSE, complete = FALSE) {
         corpus <- corpus %>% 
                 tm_map(removePunctuation) %>%
                 tm_map(stripWhitespace) %>%
-                tm_map(content_transformer(tolower), lazy=TRUE) %>%
+                tm_map(content_transformer(tolower), lazy=TRUE)
                 
         if (stop == TRUE) {
                 corpus <- corpus %>% tm_map(removeWords, stopwords("en"))
@@ -114,7 +110,7 @@ GetCorpusFromReportDF <- function(reportdf) {
         corpus <- collect(select(reportdf, Student.Comment))[[1]] %>%
                   VectorSource %>%
                   Corpus %>%
-                  CorpusCleanStem
+                  CorpusClean
         
         #tag each "document" (i.e. comment) in corpus using report information
         for (i in 1:nrow(reportdf)) {
@@ -135,7 +131,6 @@ GetCorpusFromReportDF <- function(reportdf) {
 #' OUTPUT: get corpus where each document is a member of a group
 #' (e.g. "English" is a member of "subject")
 GetGroupCorpusfromCommentCorpus <- function(corpus, group) {
-        
         #get members of given group and initialize comments vector
         members <- unique(meta(corpus, group))
         member.comments <- setNames(vector("list", length(members)),
@@ -150,6 +145,9 @@ GetGroupCorpusfromCommentCorpus <- function(corpus, group) {
 
         #make a corpus out of member.comments
         member.corpus <- VectorSource(member.comments) %>% Corpus
+        
+        #add corpus-level tag with list of members
+        meta(member.corpus, tag = "members", type = "corpus") <- members
         #retag corpus with group member ID
         for (i in 1:length(member.corpus)) {
                 meta(member.corpus[[i]], tag = group) <- members[[i]]
@@ -157,15 +155,15 @@ GetGroupCorpusfromCommentCorpus <- function(corpus, group) {
         member.corpus
 }
 
-
 # Corpora: text analytics -------------------------------------------------
 
 #format dtm of all student/teacher corpus as matrix
 #       w/ columns: ngram, tf-idf score, and
 #       sorted by tf-idf score
-GetNgramWeightMatrixfromDTM <- function(dtm) {
+CollapseAndSortDTM <- function(dtm) {
         
         freq.mat <- dtm %>%
+                as.matrix %>%
                 colSums() %>%
                 sort(decreasing = TRUE) %>%
                 as.matrix() %>%
@@ -174,7 +172,7 @@ GetNgramWeightMatrixfromDTM <- function(dtm) {
         freq.mat <- rename(freq.mat, freq = V1)
 }
 
-Comp2All <- function(corpus, tag, identifier, ngram.min, ngram.max) {
+PlotIndvVSMembers <- function(corpus, tag, identifier, ngram.min, ngram.max) {
         idx <- corpus %>% meta(tag) == identifier
         
         # Sets the default number of threads to use
@@ -194,11 +192,11 @@ Comp2All <- function(corpus, tag, identifier, ngram.min, ngram.max) {
         
         
         # Make df of indv student words & Frequencies
-        indv.freq <- GetNgramWeightMatrixfromDTM(indv.dtm)
+        indv.freq <- CollapseAndSortDTM(indv.dtm)
         
         
         #format dtm of all student/teacher corpus as sorted 2C table
-        all.freq <- GetNgramWeightMatrixfromDTM(all.dtm)
+        all.freq <- CollapseAndSortDTM(all.dtm)
         
         #create a comparison table using only words indv used at least once
         comp.freq <- indv.freq %>%
@@ -231,35 +229,54 @@ Comp2All <- function(corpus, tag, identifier, ngram.min, ngram.max) {
         View(comp.freq)
 }
 
-GetIndvTfIdf <- function(group, identifier, nmin, nmax) {
-        
-        group.comments <- GetCommentsGrouped(group)
-        
-        # Make a corpus and clean it w/ pre-defined functions
-        group.corpus <- ToCorpus(group.comments)
-        group.corpus <- CorpusClean(group.corpus)
+#'GetDocumentTextMatrix
+#'  INPUTS:
+#'      group.corpus: corpus object where each doc is a member of a group
+#'      nmin: minimum ngram length
+#'      nmax: maximum ngram length
+#'      norm: normalize ngram score for each document?
+#' OUTPUT: Document Term Matrix with given contraints
+GetDocumentTermMatrix <- function(corpus, nmin, nmax, norm) {
+        options(mc.cores=1)
         
         tfidf <- function(x) {
-                weightTfIdf(x, normalize = FALSE)
+                weightTfIdf(x, normalize = norm)
         }
         DersTokenizer <- function(x) {
                 NGramTokenizer(x, Weka_control(min = nmin, max = nmax))
         }
         
-        idx <- match(identifier, names(group.comments))
-        
-        # Sets the default number of threads to use
-        options(mc.cores=1)
-        
-        a.dtm <- DocumentTermMatrix(group.corpus, control=list(
+        teacher.dtm <- DocumentTermMatrix(corpus, control=list(
                 tokenize = DersTokenizer,
                 weighting = tfidf))
-        
-        a.mat <- a.dtm[idx,] %>% as.matrix
-        
-        a.freq <-  GetNgramWeightMatrixfromDTM(a.mat) 
 }
 
+#' INPUTS:
+#'      group.corpus: a group corpus object from GetGroupCorpusfromCommentCorpus
+#'      identifier: group identifier (e.g. teacher:"May Shen")
+#'      nmin: minimum ngram length
+#'      nmax: maximum ngram length
+#'      norm: normalize ngram score for each document?
+#' OUTPUT: Document Term Matrix with given contraintst
+#' STEPS:
+#'      1) store list of members from corpus and find match given identifier
+#'      2) Make document-term matrix (DTM)
+#'      3) subset DTM to get only identifier
+#'      4) use CollapseAndSortDTM to return only ngrams for individual
+GetIndvTfIdfMatrixFromGroupedCorpus <- function(group.corpus, identifier, nmin, nmax, norm) {
+        
+        #rip corpus-level tag of "members" from corpus metadata
+        #index the identifier in list of members
+        members <- unlist(meta(group.corpus, type = "corpus", tag = "members"))
+        idx <- which(members == identifier)
+        
+        dtm <- GetDocumentTermMatrix(group.corpus, nmin, nmax, norm)
+        indv.ngrams <- dtm[idx,] %>% CollapseAndSortDTM 
+        indv.ngrams <- indv.ngrams %>%
+                mutate(length = str_count(Words, "\\S+")) %>%
+                mutate(LenNorm = length * freq) %>%
+                arrange(desc(LenNorm))
+}
 
 # Admin Plus --------------------------------------------------------------
 
