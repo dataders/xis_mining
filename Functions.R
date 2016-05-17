@@ -383,6 +383,31 @@ CountWords <- function(ngram) {
         str_count(ngram, "\\S+")
 }
 
+#' overlap
+#' OBJ: takes two ngrams (as strings) and to see if they overlap
+#' INPUT: a,b ngrams as strings
+#' OUTPUT: TRUE if overlap
+overlap <- function(a, b) {
+        max_overlap <- min(3, CountWords(a), CountWords(b))
+        
+        a.beg <- word(a, start = 1L, end = max_overlap)
+        a.end <- word(a, start = -max_overlap, end = -1L)
+        b.beg <- word(b, start = 1L, end = max_overlap)
+        b.end <- word(b, start = -max_overlap, end = -1L)
+        
+        # b contains a's beginning
+        w <- str_detect(b, coll(a.beg, TRUE))
+        # b contains a's end
+        x <- str_detect(b, coll(a.end, TRUE))
+        # a contains b's beginning
+        y <- str_detect(a, coll(b.beg, TRUE))
+        # a contains b's end
+        z <- str_detect(a, coll(b.end, TRUE))
+        
+        #return TRUE if any of above are true
+        (w | x | y | z)
+}
+
 #' plotting library from Stack Overflow
 #' takes a linear model and plots it on the graph w/ R^s values
 lm_eqn = function(m) {
