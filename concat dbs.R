@@ -10,7 +10,8 @@ t1.report <- GetReportsDFfromMBcsv("data/t1 comments.csv")
 t2.report <- GetReportsDFfromMBcsv("data/t2 comments.csv")
 
 #Load MAP score database
-MAP.df <- GetMAPbyID("data/AssessmentResults.csv")
+t1.MAP.df <- GetMAPbyID("data/t1AssessmentResults.csv")
+t2.MAP.df <- GetMAPbyID("data/t2AssessmentResults.csv")
 
 
 #finding subset comments where student made improvement
