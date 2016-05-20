@@ -369,11 +369,11 @@ GetMAPbyID <- function(map.path) {
                 unite(temp, RITScore:TypicalFallToFallGrowth, sep = "_") %>%
                 spread(Discipline, temp) %>%
                 separate("Language Usage", paste("Lang", cols, sep = "_"),
-                         sep = "_", remove = TRUE) %>%
+                         sep = "_", remove = TRUE, convert = TRUE) %>%
                 separate("Mathematics", paste("Math", cols, sep = "_"),
-                         sep = "_", remove = TRUE) %>%
+                         sep = "_", remove = TRUE, convert = TRUE) %>%
                 separate("Reading", paste("Read", cols, sep = "_"),
-                         sep = "_", remove = TRUE)
+                         sep = "_", remove = TRUE, convert = TRUE)
 }
 
 

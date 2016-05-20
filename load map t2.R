@@ -38,7 +38,9 @@ MAP.path <- paste("data/", MAP.testdate,".Map.Results.csv", sep = "")
 #Load MAP score database
 MAP.dfs <- lapply(MAP.path, GetMAPbyID)
 
-MAP.og <- read.csv(MAP.path[2])
+MAP.og <- read.csv(MAP.path[1])
+
+MAP.df <- GetMAPbyID(MAP.path[1])
 
 #test names that don't include all goals
 discipline.repeats <- c("PRI-READ-Survey w/ Goals CC Intl (Lit/Info,Vocab)V1",
@@ -47,30 +49,25 @@ discipline.repeats <- c("PRI-READ-Survey w/ Goals CC Intl (Lit/Info,Vocab)V1",
 
 Spring.MAP.df <- read.csv(MAP.path[2]) %>%
         select(Student.ID = StudentID, Discipline, TestName,
-               Duration.min = TestDurationInMinutes, RITScore= TestRITScore,
-               StdError = TestStandardError, Percentile =TestPercentile,
-               Goal1Name, Goal1RitScore,
-               Goal2Name, Goal2RitScore,
-               Goal3Name, Goal3RitScore,
-               Goal4Name, Goal4RitScore) %>%
+               RITScore= TestRITScore, Percentile =TestPercentile,
+               Duration.min = TestDurationInMinutes) %>%
         filter(!(TestName %in% discipline.repeats)) %>%
         mutate(key = paste(Student.ID, Discipline)) %>%
         slice(-duplicated(key,fromLast=TRUE)) %>%
         select(everything(), -key, -TestName)
         
 #get column of only "TestRIT
-cols <- c("Duration.min", "RITScore", "StdError", "Percentile")
+cols <- c("RITScore", "Percentile","Duration.min")
 
 
-Spring.MAP.df <- Spring.MAP.df %>% 
-        select(Student.ID:Percentile) %>%
-        unite(temp, RITScore:Percentile, sep = "_") %>%
+Spring.MAP.df2 <- Spring.MAP.df %>% 
+        unite("temp", RITScore:Duration.min, sep = "_") %>%
         spread(Discipline, temp) %>%
         separate("Language Usage", paste("Lang", cols, sep = "_"),
-                 sep = "_", remove = TRUE) %>%
+                 sep = "_", remove = TRUE, convert = TRUE) %>%
         separate("Mathematics", paste("Math", cols, sep = "_"),
-                 sep = "_", remove = TRUE) %>%
+                 sep = "_", remove = TRUE, convert = TRUE) %>%
         separate("Reading", paste("Read", cols, sep = "_"),
-                 sep = "_", remove = TRUE)
+                 sep = "_", remove = TRUE, convert = TRUE)
 
 
