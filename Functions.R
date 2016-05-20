@@ -19,26 +19,28 @@ library(stringr)
 #splits: 1) comment in class and comments split into class and student
 #
 GetReportsDFfromMBcsv <- function(csv.path) {
+        
         #read report in from csv
         df <- read.csv(csv.path,
                        stringsAsFactors = FALSE,
                        encoding = "UTF-8",
                        na.strings = c("N/A", NA))
         
-        #filter out all entirely-NA columns
+        #filter out:
+        #1 all entirely-NA columns
         df <- Filter(function(x) !all(is.na(x)), df)
-        
-        #filter out rows with empty Teacher of Student.ID 
+        #2 rows with empty Teacher of Student.ID 
         idx1 <- nchar(df$Teacher) == 0
         idx2 <- is.na(df$Student.ID)
         df <- df[!(idx1 | idx2),]
+        
+
         
         #parse 2 paragraph comment into "Class-" and "Student-" comment columns
         df <- df %>% separate(Comments,
                                      c("Class.Comment", "Student.Comment"),
                                      sep = "\n", extra = "merge",
                                      remove = FALSE)
-        
         #to avoid Java NullPointer exception, convert NA's to ""
         idx <- is.na(df$Student.Comment)
         df$Student.Comment[idx] <- ""
@@ -69,6 +71,8 @@ GetReportsDFfromMBcsv <- function(csv.path) {
                             Cri.A, Cri.B, Cri.C, Cri.D,
                             Sum, CriMean, Student.Comment) %>%
                 mutate_each(funs(factor), Student.ID)
+        df$Student.ID <- as.integer(levels(df$Student.ID))[df$Student.ID]
+        df
 }
 
 GetMeanBreakdownFromReport <- function(report) {
@@ -247,7 +251,7 @@ GetDocumentTermMatrix <- function(corpus, nmin, nmax, norm) {
                 NGramTokenizer(x, Weka_control(min = nmin, max = nmax))
         }
         
-        teacher.dtm <- DocumentTermMatrix(corpus, control=list(
+        dtm <- DocumentTermMatrix(corpus, control=list(
                 tokenize = DersTokenizer,
                 weighting = tfidf))
 }
@@ -410,18 +414,21 @@ overlap <- function(a, b) {
 
 #' plotting library from Stack Overflow
 #' takes a linear model and plots it on the graph w/ R^s values
-lm_eqn = function(m) {
-        l <- list(a = format(coef(m)[1], digits = 2),
-                  b = format(abs(coef(m)[2]), digits = 2),
-                  r2 = format(summary(m)$r.squared, digits = 3))
-        
-        if (coef(m)[2] >= 0)  {
-                eq <- substitute(italic(y) == a + b %.% italic(x)*","~~italic(r)^2~"="~r2,l)
-        } 
-        else {
-                eq <- substitute(italic(y) == a - b %.% italic(x)*","~~italic(r)^2~"="~r2,l)
-        }
-        as.character(as.expression(eq))              
+lm_eqn <- function(m) {
+        l <- c(a = format(coef(m)[1], digits = 2),
+               b = format(abs(coef(m)[2]), digits = 2),
+               r2 = format(summary(m)$r.squared, digits = 3) )
+        ifelse(coef(m)[2] >= 0,
+               {eq <- substitute(italic(y) == a + b %.% italic(x)*","~~italic(r)^2~"="~r2,l)},
+               {eq <- substitute(italic(y) == a - b %.% italic(x)*","~~italic(r)^2~"="~r2,l)}) 
+        as.character(as.expression(eq))
 }
 
-
+#' PlotScatterFaceted
+#'
+#' Makes scatterpolot faceted by chosen variable
+PlotScatterFaceted <- function(data, ind, dep, facet) {
+        ggplot(data, aes_string(x = ind, y = dep)) +
+                geom_point() +
+                facet_wrap(as.formula(sprintf('~%s',facet)))
+}
