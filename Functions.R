@@ -381,11 +381,11 @@ GetMAPbyID <- function(map.path) {
         MAP.Spread <- MAP.Clean %>% 
                 unite("temp", RITScore:Duration.min, sep = "_") %>%
                 spread(Discipline, temp) %>%
-                separate("Language Usage", paste("Lang", cols, sep = "_"),
+                separate("Language Usage", paste("Lang", cols, sep = "."),
                          sep = "_", remove = TRUE, convert = TRUE) %>%
-                separate("Mathematics", paste("Math", cols, sep = "_"),
+                separate("Mathematics", paste("Math", cols, sep = "."),
                          sep = "_", remove = TRUE, convert = TRUE) %>%
-                separate("Reading", paste("Read", cols, sep = "_"),
+                separate("Reading", paste("Read", cols, sep = "."),
                          sep = "_", remove = TRUE, convert = TRUE)
 }
 
