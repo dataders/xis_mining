@@ -10,8 +10,17 @@ t1.report <- GetReportsDFfromMBcsv("data/t1 comments.csv")
 t2.report <- GetReportsDFfromMBcsv("data/t2 comments.csv")
 
 #Load MAP score database
-MAP.df <- GetMAPbyID("data/t1AssessmentResults.csv")
-#t2.MAP.df <- GetMAPbyID("data/t2AssessmentResults.csv")
+MAP.testdate <- c("2015Fall", "2016Spring")
+MAP.path <- paste("data/", MAP.testdate,".Map.Results.csv", sep = "")
+
+#Load MAP score database
+MAP <- lapply(MAP.path, GetMAPbyID)
+MAP.DIFF <- merge(MAP[1], MAP[2],
+                  by = "Student.ID", suffixes = c(".FALL", ".SPRING")) %>%
+        mutate(Lang.RITGrowth = Lang.RITScore.SPRING - Lang.RITScore.FALL) %>%
+        mutate(Read.RITGrowth = Read.RITScore.SPRING - Read.RITScore.FALL) %>%
+        mutate(Math.RITGrowth = Math.RITScore.SPRING - Math.RITScore.FALL) %>%
+        select(Student.ID, starts_with("Math."), starts_with("Read."),starts_with("Lang."))
 
 
 #finding subset comments where student made improvement
@@ -34,7 +43,7 @@ t12.report.byID <- t12.report %>% group_by(Student.ID) %>%
                                                  include.lowest=TRUE)))
 
 #joining!
-MB.MAP.db <- inner_join(t12.report.byID, MAP.df, by="Student.ID")
+MB.MAP.db <- inner_join(t12.report.byID, MAP.DIFF, by="Student.ID")
 sec.y <- 60*60*24*365
 all <- right_join(xis.db, MB.MAP.db, by="Student.ID") %>%
         mutate(
@@ -48,6 +57,7 @@ all <- right_join(xis.db, MB.MAP.db, by="Student.ID") %>%
         mutate_each(funs(as.numeric), starts_with("Read")) %>%
         mutate(career_pct = 100 * Years.at.XIS / (Age - 4),
                Years.XIS.int = period_to_seconds(Years.at.XIS)/sec.y)
+
                
 
 
