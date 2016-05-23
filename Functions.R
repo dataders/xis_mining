@@ -341,6 +341,9 @@ GetStudentDBfromAPxlsx <- function(xlsxpath) {
         # grade <- xis.db$GRADE.LEVEL
         # xis.db$GRADE.LEVEL <- suppressWarnings(as.numeric(levels(grade))[grade])
         # xis.db <- xis.db %>% filter(GRADE.LEVEL <= 10 & GRADE.LEVEL >= 6)
+        
+        xis.db$Student.ID <- as.integer(levels(xis.db$Student.ID))[xis.db$Student.ID]
+        xis.db
 }
 
 
