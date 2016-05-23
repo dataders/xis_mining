@@ -12,7 +12,7 @@ library(lubridate)
 library(ggplot2)
 library(stringr)
 library(devtools)
-source_gist("524eade46135f6348140")
+#source_gist("524eade46135f6348140")
 
 # ManageBac Reports---------------------------------------------------------
 
@@ -122,7 +122,7 @@ GetCorpusFromReportDF <- function(reportdf) {
         #tag each "document" (i.e. comment) in corpus using report information
         for (i in 1:nrow(reportdf)) {
                 meta(corpus[[i]], tag = "teacher") <- reportdf[i,"Teacher"]
-                meta(corpus[[i]], tag = "student ID") <- reportdf[i,"Student.ID"]
+                meta(corpus[[i]], tag = "student") <- reportdf[i,"Student.ID"]
                 meta(corpus[[i]], tag = "subject") <- reportdf[i, "Subject"]
                 meta(corpus[[i]], tag = "grade") <- reportdf[i,"Grade.Level"]
         }
@@ -138,27 +138,34 @@ GetCorpusFromReportDF <- function(reportdf) {
 #' OUTPUT: get corpus where each document is a member of a group
 #' (e.g. "English" is a member of "subject")
 GetGroupCorpusfromCommentCorpus <- function(corpus, group) {
+        
         #get members of given group and initialize comments vector
         members <- unique(meta(corpus, group))
-        member.comments <- setNames(vector("list", length(members)),
-                                    members)
+        
         #for each group member:
         #       1) get idx of all comments attributed to member
         #       2) assign a paste above member comments to comments vector
-        for (i in members) {
-                idx <- corpus %>% meta(group) == i
-                member.comments[[i]] <- do.call(paste, content(corpus[idx]))
-        }
-
+        member.comments <- lapply(members, function(x) {
+                idx <- corpus %>% meta(tag = group) == x
+                do.call(paste,content(corpus[idx]))
+        })
+        #set names of member.comments to members
+        names(member.comments) <- members
+        
         #make a corpus out of member.comments
         member.corpus <- VectorSource(member.comments) %>% Corpus
         
         #add corpus-level tag with list of members
         meta(member.corpus, tag = "members", type = "corpus") <- members
+        
         #retag corpus with group member ID
-        for (i in 1:length(member.corpus)) {
-                meta(member.corpus[[i]], tag = group) <- members[[i]]
-        }
+        i <- 0
+        member.corpus <- tm_map(member.corpus, function(x) {
+                i <<- i +1
+                meta(x, tag = group) <- members[[i]]
+                x
+        })
+        
         member.corpus
 }
 
