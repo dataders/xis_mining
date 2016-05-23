@@ -1,4 +1,6 @@
 
+
+# nationalality comparisons -----------------------------------------------
 #nationalality comparisons
 
 Taiwan        Korean            HK           USA      Canadian    Australian         Dutch     Malaysian        German     Argentine   Philippines 
@@ -18,7 +20,8 @@ ggplot(data =all.5countries , aes(x=career_pct,  y=Math.RITScore.SPRING, label=M
 
 ggsave("MAP/t2.grades~Spring.Math.Percentile_bycountry.png", width = 9, height = 6)
 
-#1st language comparisons
+
+#1st language comparisons ------------------------------------------------
 
 langs <- c("English", "Korean", "Mandarin")
 all.3lang <- all %>% filter(X1st.Language %in% langs)
@@ -35,7 +38,8 @@ ggplot(data =all.3lang , aes(x=avg.CriMean.t2,  y=Math.RITScore.SPRING, label=Ma
 
 ggsave("MAP/t2.grades~Spring.Math.Percentile_byLang.png", width = 9, height = 3)
 
-#grade level comparisons
+
+# grade level comparisons -------------------------------------------------
 
 ggplot(data = all, aes(x=Years.XIS.int, y=Math.RITScore.SPRING, label=Math.RITScore.SPRING)) +
         stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE) +
@@ -59,3 +63,7 @@ ggplot(data = all, aes(x=Years.XIS.int, y=Lang.RITScore.SPRING, label=Lang.RITSc
         ylab("Spring '16 MAP Lang Percentile")
 
 ggsave("MAP/Years.At.XIS~Spring.Lang.Percentile_bygrade.png", width = 6, height = 6)
+
+
+
+

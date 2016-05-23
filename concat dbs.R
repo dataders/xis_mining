@@ -1,27 +1,20 @@
 setwd("/Users/andersswanson/Desktop/comment\ mining")
 source("Functions.R")
 
+
+# Admin Plus --------------------------------------------------------------
+
+
 #load Admin Plus Datebase
 xis.db <- GetStudentDBfromAPxlsx("data/xis db.xlsx")
+
+
+# ManageBac ---------------------------------------------------------------
 
 
 #load MB reports
 t1.report <- GetReportsDFfromMBcsv("data/t1 comments.csv")
 t2.report <- GetReportsDFfromMBcsv("data/t2 comments.csv")
-
-#Load MAP score database
-MAP.testdate <- c("2015Fall", "2016Spring")
-MAP.path <- paste("data/", MAP.testdate,".Map.Results.csv", sep = "")
-
-#Load MAP score database
-MAP <- lapply(MAP.path, GetMAPbyID)
-MAP.DIFF <- merge(MAP[1], MAP[2],
-                  by = "Student.ID", suffixes = c(".FALL", ".SPRING")) %>%
-        mutate(Lang.RITGrowth = Lang.RITScore.SPRING - Lang.RITScore.FALL) %>%
-        mutate(Read.RITGrowth = Read.RITScore.SPRING - Read.RITScore.FALL) %>%
-        mutate(Math.RITGrowth = Math.RITScore.SPRING - Math.RITScore.FALL) %>%
-        select(Student.ID, starts_with("Math."), starts_with("Read."),starts_with("Lang."))
-
 
 #finding subset comments where student made improvement
 by.cols <- c("Student.ID", "Last.Name", "First.Name",
@@ -41,6 +34,28 @@ t12.report.byID <- t12.report %>% group_by(Student.ID) %>%
                                                  quantile(growth.avg, probs=0:4/4,
                                                           na.rm = TRUE),
                                                  include.lowest=TRUE)))
+
+# MAP databases (Fall & Spring) ------------------------------------------------
+
+
+#Load MAP score databases
+MAP.testdate <- c("2015Fall", "2016Spring")
+MAP.path <- paste("data/", MAP.testdate,".Map.Results.csv", sep = "")
+
+#Load MAP score database
+MAP <- lapply(MAP.path, GetMAPbyID)
+MAP.DIFF <- merge(MAP[1], MAP[2],
+                  by = "Student.ID", suffixes = c(".FALL", ".SPRING")) %>%
+        mutate(Lang.RITGrowth = Lang.RITScore.SPRING - Lang.RITScore.FALL) %>%
+        mutate(Read.RITGrowth = Read.RITScore.SPRING - Read.RITScore.FALL) %>%
+        mutate(Math.RITGrowth = Math.RITScore.SPRING - Math.RITScore.FALL) %>%
+        select(Student.ID, starts_with("Math."), starts_with("Read."),starts_with("Lang."))
+
+
+
+#concat MB with AP
+MB.AP.db <- inner_join(xis.db, t12.report.byID, by="Student.ID")
+
 
 #joining!
 MB.MAP.db <- inner_join(t12.report.byID, MAP.DIFF, by="Student.ID")
