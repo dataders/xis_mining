@@ -114,6 +114,8 @@ CorpusClean <- function(corpus, stop = FALSE, stem = FALSE, complete = FALSE) {
 
 #rip Student.Comment column, turn it into a corpus and clean it 
 GetCorpusFromReportDF <- function(reportdf) {
+        
+        reportdf <- reportdf %>% mutate(ID.SUB = paste(Student.ID, Subject))
         corpus <- collect(select(reportdf, Student.Comment))[[1]] %>%
                   VectorSource %>%
                   Corpus %>%
@@ -125,6 +127,7 @@ GetCorpusFromReportDF <- function(reportdf) {
                 meta(corpus[[i]], tag = "student") <- reportdf[i,"Student.ID"]
                 meta(corpus[[i]], tag = "subject") <- reportdf[i, "Subject"]
                 meta(corpus[[i]], tag = "grade") <- reportdf[i,"Grade.Level"]
+                meta(corpus[[i]], tag = "ID.SUB") <- reportdf[i,"ID.SUB"]
         }
         corpus
 }
