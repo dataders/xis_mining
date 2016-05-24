@@ -297,28 +297,6 @@ GetIndvTfIdfMatrixFromGroupedCorpus <- function(group.corpus, identifier, nmin, 
 
 # Admin Plus --------------------------------------------------------------
 
-#' Calculate age
-#' 
-#' By default, calculates the typical "age in years", with a
-#' \code{floor} applied so that you are, e.g., 5 years old from
-#' 5th birthday through the day before your 6th birthday. Set
-#' \code{floor = FALSE} to return decimal ages, and change \code{units}
-#' for units other than years.
-#' @param dob date-of-birth, the day to start calculating age.
-#' @param age.day the date on which age is to be calculated.
-#' @param units unit to measure age in. Defaults to \code{"years"}. Passed to \link{\code{duration}}.
-#' @param floor boolean for whether or not to floor the result. Defaults to \code{TRUE}.
-#' @return Age in \code{units}. Will be an integer if \code{floor = TRUE}.
-#' @examples
-#' my.dob <- as.Date('1983-10-20')
-#' age(my.dob)
-#' age(my.dob, units = "minutes")
-#' age(my.dob, floor = FALSE)
-age <- function(dob, age.day = today(), units = "years", floor = TRUE) {
-        calc.age = new_interval(dob, age.day) / duration(num = 1, units = units)
-        if (floor) return(as.integer(floor(calc.age)))
-        return(calc.age)
-}
 
 #takes AdminPlus database export and strips unecessary columns
 #lubridates, and filters out MYP and DP students
@@ -406,6 +384,32 @@ GetMAPbyID <- function(map.path) {
 
 
 # Helpers (Other) -------------------------------------------------------------------
+
+#' GetPrunedList
+#' 
+#' takes a word freq df returned from CollapseAndSortDTM, returns pruned table
+GetPrunedList <- function(wordfreqdf, prune_thru) {
+        #take only first n items in list
+        tmp <- head(wordfreqdf, n = prune_thru)
+        
+        #for each ngram in list:
+        t <- (lapply(1:nrow(tmp), function(x) {
+                #find overlap between ngram and all items in list (overlap = TRUE)
+                tmp <- overlap(tmp[x,"ngrams"], tmp$ngrams)
+                #set overlap as false for itself and higher-scoring ngrams
+                tmp[1:x] <- FALSE
+                tmp
+        }))
+        #bind each ngram's overlap vector together to make a matrix
+        t2 <- do.call(cbind, t)   
+        
+        #find rows(i.e. ngrams) that do not overlap with those below
+        idx <- rowSums(t2) == 0
+        pruned <- tmp[idx,]
+        rownames(pruned) <- NULL
+        pruned
+}
+
 
 #' CountWords
 #' OBJ: count number of words in ngram

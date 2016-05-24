@@ -8,17 +8,17 @@ Taiwan        Korean            HK           USA      Canadian    Australian    
 countries <- c("Taiwan", "Korean", "HK", "USA", "Canadian")
 all.5countries <- all %>% filter(NATIONALITY %in% countries)
 
-ggplot(data =all.5countries , aes(x=career_pct,  y=Math.RITScore.SPRING, label=Math.RITScore.SPRING)) +
+ggplot(data =all.5countries , aes(x=avg.CriMean.t2,  y=Lang.Percentile.SPRING, label=Lang.Percentile.SPRING)) +
         stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE) +
         geom_smooth(method="lm",se=FALSE) +
         geom_point() +
-        facet_wrap(~NATIONALITY) +
-        ggtitle("T2 Avg Criterion Levels by Spring '16 MAP Math Score Percentile") +
+        facet_wrap(~HOUSE) +
+        ggtitle("T2 Avg Criterion Levels by Spring '16 MAP Lang Score Percentile") +
         xlab("Trimester Two Criterion Level Average") +
-        ylab("Spring '16 MAP Math Percentile") +
+        ylab("Spring '16 MAP Lang Percentile") +
         theme_bw()
 
-ggsave("MAP/t2.grades~Spring.Math.Percentile_bycountry.png", width = 9, height = 6)
+ggsave("MAP/t2.grades~Spring.Lang.Percentile_bycountry.png", width = 9, height = 6)
 
 
 #1st language comparisons ------------------------------------------------
