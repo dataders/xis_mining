@@ -8,39 +8,34 @@ t1.corpus <- GetCorpusFromReportDF(t1.report)
 t1.corpus.student <- GetGroupCorpusfromCommentCorpus(t1.corpus, "student")
 
 
-idx <- t1.corpus %>% meta(tag = "ID.SUB") %in% quartiles[[1]]
-t1.corpus[idx]
 
+
+#add ID.SUB column
 t12.report <- t12.report %>% mutate(ID.SUB = paste(Student.ID, Subject))
 
+#get 4 quartiles of ID.SUB's 
 quarts <- c(1,2,3,4)
 quartiles <- lapply(quarts, function(x) {
         t12.report %>% filter(class.growth.quartile == x) %>%
                 .$ID.SUB
 })
 
-member.comments <- lapply(quartiles, function(x) {
+#paste each quartile's comments into one comment
+quartile.comments <- lapply(quartiles, function(x) {
         idx <- t1.corpus %>% meta(tag = "ID.SUB") %in% x
         do.call(paste,content(t1.corpus[idx]))
 })
 
 
+#make corpus (1 quartile = 1 document)
+quartile.corpus <- VectorSource(quartile.comments) %>% Corpus
 
-member.corpus <- VectorSource(member.comments) %>% Corpus
+#make dtc from corpus
+quart.dtm <- GetDocumentTermMatrix(quartile.corpus, 2,2, norm = TRUE)
 
-quart.dtm <- GetDocumentTermMatrix(member.corpus, 2,2, norm = TRUE)
-
-
-indv.ngrams <- quart.dtm[3:4,] %>% CollapseAndSortDTM 
-indv.ngrams <- indv.ngrams %>%
-        mutate(length = CountWords(Words)) %>%
-        mutate(LenNorm = length * freq) %>%
-        arrange(desc(LenNorm))
-
-
-t1.dtm <- GetDocumentTermMatrix(t1.corpus, 2,2, norm = TRUE)
-
-indv.ngrams <- quart.dtm[3:4,] %>% CollapseAndSortDTM 
+#take quartiles get freq list and sorted by LenNorm
+idx <- 3:4
+indv.ngrams <- quart.dtm[idx,] %>% CollapseAndSortDTM 
 indv.ngrams <- indv.ngrams %>%
         mutate(length = CountWords(Words)) %>%
         mutate(LenNorm = length * freq) %>%
