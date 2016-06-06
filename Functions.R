@@ -129,6 +129,27 @@ GetCorpusFromReportDF <- function(reportdf) {
                 meta(corpus[[i]], tag = "grade") <- reportdf[i,"Grade.Level"]
                 meta(corpus[[i]], tag = "ID.SUB") <- reportdf[i,"ID.SUB"]
         }
+
+        corpus
+}
+
+GetCorpusFromReportDF2 <- function(reportdf) {
+        
+        reportdf <- reportdf %>% mutate(ID.SUB = paste(Student.ID, Subject))
+        corpus <- collect(select(reportdf, Student.Comment))[[1]] %>%
+                VectorSource %>%
+                Corpus %>%
+                CorpusClean
+        
+        #tag each "document" (i.e. comment) in corpus using report information
+        lapply(nrow(reportdf), function(x) {
+                meta(corpus[[x]], tag = "teacher") <- reportdf[x,"Teacher"]
+                meta(corpus[[x]], tag = "student") <- reportdf[x,"Student.ID"]
+                meta(corpus[[x]], tag = "subject") <- reportdf[x, "Subject"]
+                meta(corpus[[x]], tag = "grade") <- reportdf[x,"Grade.Level"]
+                meta(corpus[[x]], tag = "ID.SUB") <- reportdf[x,"ID.SUB"]
+        })
+        
         corpus
 }
 
@@ -293,6 +314,57 @@ GetIndvTfIdfMatrixFromGroupedCorpus <- function(group.corpus, identifier, nmin, 
                 mutate(length = CountWords(Words)) %>%
                 mutate(LenNorm = length * freq) %>%
                 arrange(desc(LenNorm))
+}
+
+#' GetAllTfIdfMatricesFromGroupedCorpus
+#' INPUTS:
+#'      @param group.corpus: a group corpus object from GetGroupCorpusfromCommentCorpus
+#'      @param nmin: minimum ngram length
+#'      @paramn max: maximum ngram length
+#'      @param norm: normalize ngram score for each document?
+#' OUTPUT: Document Term Matrix with given contraintst
+#' STEPS:
+#'      1) store list of members from corpus
+#'      2) Make document-term matrix (DTM)
+#'      3) for each member :
+#'              subset DTM to get only identifier
+#'      4) use CollapseAndSortDTM to return only ngrams for individual
+#'      
+GetAllTfIdfMatricesFromGroupedCorpus <- function(group.corpus, nmin, nmax, norm) {
+        
+        #rip corpus-level tag of "members" from corpus metadata
+        #index the identifier in list of members
+        members <- unlist(meta(group.corpus, type = "corpus", tag = "members"))
+        
+        dtm <- GetDocumentTermMatrix(group.corpus, nmin, nmax, norm)
+        
+        setNames(lapply(members, function(x) {
+                idx <- which(members == x)
+                indv.ngrams <- dtm[idx,] %>% CollapseAndSortDTM 
+                indv.ngrams <- indv.ngrams %>%
+                        mutate(length = CountWords(Words)) %>%
+                        mutate(LenNorm = length * freq) %>%
+                        arrange(desc(LenNorm))
+        }),members)
+}
+
+#' GetMemberPrunedList
+#' 
+#' INPUTS: 
+#'      @param group.corpus: a group corpus object from GetGroupCorpusfromCommentCorpus
+#'      @param nmin: minimum ngram length
+#'      @paramn max: maximum ngram length
+#'      @param norm: normalize ngram score for each document?
+#' OUTPUT: a list of lists of unique ngrams for each member
+GetMemberPrunedList <- function(group.corpus, nmin, nmax, normal) {
+        all.tfidf <- GetAllTfIdfMatricesFromGroupedCorpus(group.corpus, nmin, nmax, normal)
+        
+        all.pruned <- lapply(all.tfidf, function(x) {
+                x %>% head(n = 200) %>%
+                        select(ngrams = Words, tfidfXlength = LenNorm) %>%
+                        GetPrunedList(200)
+                
+        })
 }
 
 # Admin Plus --------------------------------------------------------------
