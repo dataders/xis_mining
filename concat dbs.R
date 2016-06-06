@@ -15,6 +15,7 @@ xis.db <- GetStudentDBfromAPxlsx("data/xis db.xlsx")
 #load MB reports
 t1.report <- GetReportsDFfromMBcsv("data/t1 comments.csv")
 t2.report <- GetReportsDFfromMBcsv("data/t2 comments.csv")
+t3.report <- GetReportsDFfromMBcsv("data/t3 comments.csv")
 
 #finding subset comments where student made improvement
 by.cols <- c("Student.ID", "Last.Name", "First.Name",

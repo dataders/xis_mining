@@ -20,6 +20,7 @@ t12.report.byID <- t12.report %>% group_by(Student.ID) %>%
 #finding student mean Cri score increase from T1 to T2
 t1.grades.stats <- GetMeanBreakdownFromReport(t1.report)
 t2.grades.stats <- GetMeanBreakdownFromReport(t2.report)
+t3.grades.stats <- GetMeanBreakdownFromReport(t3.report)
 
 t12.grades.stats <- right_join(t1.grades.stats[[1]], t2.grades.stats[[1]],
                                by = "Student.ID") %>%
