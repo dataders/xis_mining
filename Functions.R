@@ -68,7 +68,7 @@ GetReportsDFfromMBcsv <- function(csv.path) {
         }
         
         df$CriMean <- rowMeans(select(df, Cri.A:Cri.D), na.rm = TRUE)
-        df <- df %>% select(Student.ID, Last.Name, First.Name,
+        df <- df %>% select(Student.ID, Last.Name, First.Name, Class ID,
                             Grade.Level, Subject, Teacher,
                             Cri.A, Cri.B, Cri.C, Cri.D,
                             Sum, CriMean, Student.Comment) %>%
@@ -356,13 +356,13 @@ GetAllTfIdfMatricesFromGroupedCorpus <- function(group.corpus, nmin, nmax, norm)
 #'      @paramn max: maximum ngram length
 #'      @param norm: normalize ngram score for each document?
 #' OUTPUT: a list of lists of unique ngrams for each member
-GetMemberPrunedList <- function(group.corpus, nmin, nmax, normal) {
+GetMemberPrunedList <- function(group.corpus, nmin, nmax, normal, prune_thru) {
         all.tfidf <- GetAllTfIdfMatricesFromGroupedCorpus(group.corpus, nmin, nmax, normal)
         
         all.pruned <- lapply(all.tfidf, function(x) {
-                x %>% head(n = 200) %>%
+                x %>%
                         select(ngrams = Words, tfidfXlength = LenNorm) %>%
-                        GetPrunedList(200)
+                        GetPrunedList(prune_thru)
                 
         })
 }
