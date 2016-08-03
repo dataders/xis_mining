@@ -1,0 +1,55 @@
+<html lang="en">
+  <head>
+    <title>Untitled Page</title>
+    <link rel="stylesheet" href="style.css" type="text/css" />
+    <script type="text/javascript" src="jquery-1.4.2.js"></script>
+    <script type="text/javascript" src="jquery.tablesorter.js"></script>
+    <script type="text/javascript">
+$(document).ready(function()
+  {
+    $("#myTable").tablesorter();
+  }
+);
+    </script>
+  </head>
+  <body>
+    <table id="myTable" class="tablesorter" border="0" cellspacing="1" cellpadding="0">
+      <thead>
+        <tr>
+                      <th>ngrams</th>
+                      <th>tfidfXlength</th>
+                  </tr>
+      </thead>
+      <tbody>
+                <tr>
+                      <td>become a more efficient and effective learner</td>
+                      <td>0.00734307663616894</td>
+                  </tr>
+                <tr>
+                      <td>can be seen in</td>
+                      <td>0.00492209851057883</td>
+                  </tr>
+                <tr>
+                      <td>i recommend that she</td>
+                      <td>0.00419604379209654</td>
+                  </tr>
+                <tr>
+                      <td>has done a wonderful job adjusting</td>
+                      <td>0.00367153831808447</td>
+                  </tr>
+                <tr>
+                      <td>to improve in the coming trimester</td>
+                      <td>0.00367153831808447</td>
+                  </tr>
+                <tr>
+                      <td>adjusting to life as a student at</td>
+                      <td>0.00305961526507039</td>
+                  </tr>
+                <tr>
+                      <td>a decrease in performance as students learn</td>
+                      <td>0.00244769221205631</td>
+                  </tr>
+              </tbody>
+    </table>
+  </body>
+</html>

@@ -68,7 +68,7 @@ GetReportsDFfromMBcsv <- function(csv.path) {
         }
         
         df$CriMean <- rowMeans(select(df, Cri.A:Cri.D), na.rm = TRUE)
-        df <- df %>% select(Student.ID, Last.Name, First.Name, Class ID,
+        df <- df %>% select(Student.ID, Last.Name, First.Name, Class.ID,
                             Grade.Level, Subject, Teacher,
                             Cri.A, Cri.B, Cri.C, Cri.D,
                             Sum, CriMean, Student.Comment) %>%
@@ -537,6 +537,12 @@ PlotScatterFaceted <- function(data, ind, dep, facet) {
                 facet_wrap(as.formula(sprintf('~%s',facet)))
 }
 
+#' specify_decimal
+#'
+#' takes a number,x, and rounds and truncates to k digits
+specify_decimal <- function(x, k) {
+        format(round(x, k), nsmall=k)
+}
 
 # stat_smooth_func --------------------------------------------------------
 # from https://gist.github.com/kdauria/524eade46135f6348140

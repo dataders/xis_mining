@@ -1,0 +1,37 @@
+i'm porting/copying a Python implementation from fivethirtyeight (article, github repo).
+
+Since tf-idf is built for comparing ngrams of similar length, I've normalized the score by multiplying the tf-idf score by n (the length of the ngram).
+
+As you can see from the sample data, there is a lot of overlap between ngrams.
+
+I designed a function to check if the beginnings and ends of two strings are contained within each other.
+
+
+
+DESIRED OUTPUT: a list of ngrams that doesn't have overlap with any other ngram in the list. in the case that there is overlap, the higher ranking ngram is kept, the lower is removed from the list.
+
+
+DATA
+example <- structure(list(ngrams = c("needs to be able to", "a specific problem or issue", 
+"scientific knowledge and understanding to", "scientific knowledge", 
+"apply scientific knowledge and understanding", "needs to be able", 
+"for criteria", "information to make scientifically supported", 
+"to make scientifically supported judgments", "and understanding to solve problems", 
+"knowledge and understanding to solve", "she needs to be able", 
+"solve problems set in familiar", "to solve problems set in", 
+"to be able to", "scientific knowledge and", "to work to understand concepts", 
+"understanding to solve problems set", "willing to work to understand", 
+"is able to outline", "is willing to work to", "a specific problem or", 
+"apply scientific knowledge and", "problems set in familiar", 
+"scientific knowledge and understanding", "specific problem or issue", 
+"required for different assessment criteria", "a scientific investigation", 
+"he needs to be able", "the implications of using science"), 
+    tfidfXlength = c(982.285750274039, 806.61656266226, 806.61656266226, 
+    803.031600161539, 788.691750158654, 785.828600219231, 748, 
+    734.917312647837, 734.917312647837, 699.067687640626, 699.067687640626, 
+    699.067687640626, 699.067687640626, 699.067687640626, 696, 
+    688.312800138462, 681.14287513702, 681.14287513702, 681.14287513702, 
+    673.972950135577, 663.218062633414, 645.293250129808, 645.293250129808, 
+    645.293250129808, 645.293250129808, 645.293250129808, 645.293250129808, 
+    634.538362627645, 627.368437626202, 609.443625122596)), class = "data.frame", row.names = c(NA, 
+-30L), .Names = c("ngrams", "tfidfXlength"))

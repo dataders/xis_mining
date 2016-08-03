@@ -27,6 +27,7 @@ t12.report <- merge(t1.report, t2.report,
                                                        quantile(class.growth, probs=0:4/4,
                                                                 na.rm = TRUE),
                                                        include.lowest=TRUE)))
+
 t12.report.byID <- t12.report %>% group_by(Student.ID) %>%
         summarize( avg.CriMean.t1 = mean(CriMean.t1, na.rm = TRUE),
                    avg.CriMean.t2 = mean(CriMean.t2, na.rm = TRUE),
@@ -74,7 +75,12 @@ all <- right_join(xis.db, MB.MAP.db, by="Student.ID") %>%
         mutate(career_pct = 100 * Years.at.XIS / (Age - 4),
                Years.XIS.int = period_to_seconds(Years.at.XIS)/sec.y)
 
-               
+
+
+
+
+
+
 
 
 
