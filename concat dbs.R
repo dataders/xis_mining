@@ -43,9 +43,9 @@ t12.report.byID <- t12.report %>% group_by(Student.ID) %>%
 #Load MAP score databases
 MAP.testdate <- c("2015Fall", "2016Spring")
 MAP.path <- paste("data/", MAP.testdate,".Map.Results.csv", sep = "")
-
-#Load MAP score database
 MAP <- lapply(MAP.path, GetMAPbyID)
+
+#merge fall and spring map databases to have the following
 MAP.DIFF <- merge(MAP[1], MAP[2],
                   by = "Student.ID", suffixes = c(".FALL", ".SPRING")) %>%
         mutate(Lang.RITGrowth = Lang.RITScore.SPRING - Lang.RITScore.FALL) %>%
@@ -55,7 +55,7 @@ MAP.DIFF <- merge(MAP[1], MAP[2],
 
 
 
-#concat MB with AP
+#concat ManageBac df with AdminPlus df
 MB.AP.db <- inner_join(xis.db, t12.report.byID, by="Student.ID")
 
 

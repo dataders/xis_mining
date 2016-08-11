@@ -6,7 +6,7 @@ t1.report <- GetReportsDFfromMBcsv("data/t1 comments.csv")
 t2.report <- GetReportsDFfromMBcsv("data/t2 comments.csv")
 t3.report <- GetReportsDFfromMBcsv("data/t3 comments.csv")
 
-#name columns how I want despite ugly double join 
+#create vector of columnnames to counteract ugly double join 
 by.cols <- c("Student.ID", "Last.Name", "First.Name", "Class.ID",
              "Grade.Level", "Subject", "Teacher")
 s <- c("Cri.A", "Cri.B", "Cri.C", "Cri.D", "Sum", "CriMean", "Student.Comment")
@@ -14,7 +14,7 @@ t <-c(".t1", ".t2", ".t3")
 t.stats <- unlist(lapply(t,function(x) {paste(s,x, sep = "")}))
 year.report.cols <- c(by.cols, t.stats)
 
-
+#join X2, setnames to desired column names
 year.report <- setNames(
         #join t1 to t2 then join result to t2
         left_join(t1.report, t2.report, by = by.cols) %>% 
@@ -22,6 +22,7 @@ year.report <- setNames(
         #name columns based on above
         year.report.cols)
 
+#remove duplicate and add improvement metrics
 year.report <- year.report %>%
         #make an "idx column to find and remove duplicates
         mutate(idx = paste(Student.ID, Subject, Teacher)) %>%
@@ -32,8 +33,6 @@ year.report <- year.report %>%
                t23.growth = CriMean.t3 - CriMean.t2,
                t13.growth = CriMean.t3 - CriMean.t1)
 
-
-
 #wrappers for mean and sd with na.rm = TRUE
 av <- function(x) {
         mean(x, na.rm = TRUE)
@@ -42,21 +41,23 @@ s <- function(x) {
         sd(x, na.rm = TRUE)
 }
 
-#get teacher mean&sd for t1, t2, t3, and t1 to t3 growth
+#get teacher mean&sd for t1, t2, t3,
+#t1 to t2, t2 to t3, and t1 to t3 growth
 by_teacher <- year.report %>%
         group_by(Teacher) %>%
         summarize(t1.m = av(CriMean.t1), t1.s = s(CriMean.t1),
                   t2.m = av(CriMean.t2), t2.s = s(CriMean.t2),
                   t3.m = av(CriMean.t3), t3.s = s(CriMean.t3),
-                  t13.m = av(t13.growth), t13.s = s(t13.growth)) # %>%
-       # select(Teacher, ends_with(".m"))
+                  t12.m = av(t12.growth), t12.s = s(t12.growth),
+                  t23.m = av(t23.growth), t23.s = s(t23.growth),
+                  t13.m = av(t13.growth), t13.s = s(t13.growth)) %>%
+        mutate_each(funs(round(.,2)), -Teacher)
 
 #select only year growth mean&sd columns
 by_teacher.t13 <- by_teacher %>%
         select(Teacher, starts_with("t13."))
 
 #add year growth mean&sd columns to year.report
-#
 year.report.plus <- left_join(year.report, by_teacher.t13, by = "Teacher") %>%
         #normalize the t13.growth by mean & sd of teacher t13.growth
         mutate(t13.zgrowth = (t13.growth - t13.m)/t13.s)
@@ -69,8 +70,10 @@ by_subject <- year.report %>%
 
 by_ClassID <- year.report %>%
         group_by(Class.ID) %>%
-        summarize(CriMean.t1 = av(CriMean.t1), av(CriMean.t2), av(CriMean.t3))
-?summarize
-
-test <- year.report.plus[is.na(year.report.plus$t13.zgrowth) == TRUE,] %>%
-        distinct(Student.ID)
+        summarize(t1.m = av(CriMean.t1), t1.s = s(CriMean.t1),
+                  t2.m = av(CriMean.t2), t2.s = s(CriMean.t2),
+                  t3.m = av(CriMean.t3), t3.s = s(CriMean.t3),
+                  t12.m = av(t12.growth), t12.s = s(t12.growth),
+                  t23.m = av(t23.growth), t23.s = s(t23.growth),
+                  t13.m = av(t13.growth), t13.s = s(t13.growth)) %>%
+        mutate_each(funs(round(.,2)), -Class.ID)
