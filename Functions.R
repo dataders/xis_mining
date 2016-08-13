@@ -95,10 +95,13 @@ GetMeanBreakdownFromReport <- function(report) {
 
 # Corpora: Creation and Cleaning ------------------------------------------
 
-#remove uppercase, punctuation, whitespace, & stopwords
+# change to all lowercase, strip whitespace numbers and punctuation,
+# THEN remove some number of the following:
+#   stopwordssuffixes (with option to complete)
 CorpusClean <- function(corpus, stop = FALSE, stem = FALSE, complete = FALSE) {
         corpus <- corpus %>% 
                 tm_map(removePunctuation) %>%
+                tm_map(removeNumbers) %>%
                 tm_map(stripWhitespace) %>%
                 tm_map(content_transformer(tolower), lazy=TRUE)
                 
@@ -107,7 +110,7 @@ CorpusClean <- function(corpus, stop = FALSE, stem = FALSE, complete = FALSE) {
         }        
         if (stem == TRUE) {
                 corpus <- corpus %>% tm_map(stemDocument, language = "en")
-        }
+
         if (complete == TRUE) {
                 corpus <- corpus %>% 
                         tm_map(stemCompletion, dictionary = corpus.copy, type = "prevalent")
