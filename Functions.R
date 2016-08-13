@@ -1,6 +1,9 @@
 #author = Anders Swanson
 # Dependencies ------------------------------------------------------------
 
+dyn.load('/Library/Java/JavaVirtualMachines/jdk1.8.0_101.jdk/Contents/Home/jre/lib/server/libjvm.dylib')
+
+
 #load required libraries, data, and created functions
 library(dplyr)
 library(tm)

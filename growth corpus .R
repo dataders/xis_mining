@@ -18,8 +18,6 @@ t12.report <- merge(t1.report, t2.report,
                                                        quantile(class.growth, probs=0:4/4,
                                                                 na.rm = TRUE),
                                                        include.lowest=TRUE)))
-
-
 #add ID.SUB column
 t12.report <- t12.report %>% mutate(ID.SUB = paste(Student.ID, Subject))
 
