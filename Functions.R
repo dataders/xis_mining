@@ -110,7 +110,7 @@ CorpusClean <- function(corpus, stop = FALSE, stem = FALSE, complete = FALSE) {
         }        
         if (stem == TRUE) {
                 corpus <- corpus %>% tm_map(stemDocument, language = "en")
-
+        }
         if (complete == TRUE) {
                 corpus <- corpus %>% 
                         tm_map(stemCompletion, dictionary = corpus.copy, type = "prevalent")
@@ -295,6 +295,11 @@ GetDocumentTermMatrix <- function(corpus, nmin, nmax, norm) {
                 weighting = tfidf))
 }
 
+
+# Grouped Corpora ---------------------------------------------------------
+
+
+
 #' INPUTS:
 #'      group.corpus: a group corpus object from GetGroupCorpusfromCommentCorpus
 #'      identifier: group identifier (e.g. teacher:"May Shen")
@@ -323,12 +328,13 @@ GetIndvTfIdfMatrixFromGroupedCorpus <- function(group.corpus, identifier, nmin, 
 }
 
 #' GetAllTfIdfMatricesFromGroupedCorpus
+#' PURPOSE: FOR GROUPED CORPORA
 #' INPUTS:
 #'      @param group.corpus: a group corpus object from GetGroupCorpusfromCommentCorpus
 #'      @param nmin: minimum ngram length
 #'      @paramn max: maximum ngram length
 #'      @param norm: normalize ngram score for each document?
-#' OUTPUT: Document Term Matrix with given contraintst
+#' OUTPUT: A list of Document Term Matrices with given contraintst
 #' STEPS:
 #'      1) store list of members from corpus
 #'      2) Make document-term matrix (DTM)
@@ -354,22 +360,19 @@ GetAllTfIdfMatricesFromGroupedCorpus <- function(group.corpus, nmin, nmax, norm)
         }),members)
 }
 
-#' GetMemberPrunedList
+#'GetPrunedListsFromGroupTfidfMatrices
 #' 
 #' INPUTS: 
-#'      @param group.corpus: a group corpus object from GetGroupCorpusfromCommentCorpus
-#'      @param nmin: minimum ngram length
-#'      @paramn max: maximum ngram length
-#'      @param norm: normalize ngram score for each document?
-#' OUTPUT: a list of lists of unique ngrams for each member
-GetMemberPrunedList <- function(group.corpus, nmin, nmax, normal, prune_thru) {
-        all.tfidf <- GetAllTfIdfMatricesFromGroupedCorpus(group.corpus, nmin, nmax, normal)
-        
+#'      @param all.tfidf: a list of tfidx matrixes
+#'      @param prune_thru: 
+#' OUTPUT: a list of pruned matrixes of unique ngrams for each member
+GetPrunedListsFromGroupTfidfMatrices <- function(all.tfidf, prune_thru) {
+
+        #for each table in all.tfidf, select some of the columns and prune what's there
         all.pruned <- lapply(all.tfidf, function(x) {
                 x %>%
                         select(ngrams = Words, tfidfXlength = LenNorm) %>%
                         GetPrunedList(prune_thru)
-                
         })
 }
 
@@ -466,18 +469,19 @@ GetMAPbyID <- function(map.path) {
 #' GetPrunedList
 #' 
 #' takes a word freq df returned from CollapseAndSortDTM, returns pruned table
-GetPrunedList <- function(wordfreqdf, prune_thru) {
+GetPrunedList <- function(wordfreqdf, prune_thru = 100) {
         #take only first n items in list
-        tmp <- head(wordfreqdf, n = prune_thru)
-        
+        tmp <- head(wordfreqdf, n = prune_thru) %>%
+                select(ngrams = Words, tfidfXlength = LenNorm)
         #for each ngram in list:
         t <- (lapply(1:nrow(tmp), function(x) {
                 #find overlap between ngram and all items in list (overlap = TRUE)
-                tmp <- overlap(tmp[x,"ngrams"], tmp$ngrams)
+                idx <- overlap(tmp[x, "ngrams"], tmp$ngrams)
                 #set overlap as false for itself and higher-scoring ngrams
-                tmp[1:x] <- FALSE
-                tmp
+                idx[1:x] <- FALSE
+                idx
         }))
+        
         #bind each ngram's overlap vector together to make a matrix
         t2 <- do.call(cbind, t)   
         
@@ -488,6 +492,20 @@ GetPrunedList <- function(wordfreqdf, prune_thru) {
         pruned
 }
 
+#INPUT: group.corpus and 
+GetAllTfIdfMatricesFromCorpus <- function(corpus, nmin, nmax, norm) {
+        dtm <- GetDocumentTermMatrix(corpus, nmin, nmax, norm)
+        
+        idx <- 1:nrow(as.matrix(dtm))
+        
+        all.tfidf <- lapply(idx, function(x) {
+                indv.ngrams <- dtm[x,] %>% CollapseAndSortDTM 
+                indv.ngrams <- indv.ngrams %>%
+                        mutate(length = CountWords(Words)) %>%
+                        mutate(LenNorm = length * freq) %>%
+                        arrange(desc(LenNorm))
+        })
+}
 
 #' CountWords
 #' OBJ: count number of words in ngram
@@ -525,12 +543,15 @@ overlap <- function(a, b) {
 #' plotting library from Stack Overflow
 #' takes a linear model and plots it on the graph w/ R^s values
 lm_eqn <- function(m) {
+        
         l <- c(a = format(coef(m)[1], digits = 2),
                b = format(abs(coef(m)[2]), digits = 2),
                r2 = format(summary(m)$r.squared, digits = 3) )
-        ifelse(coef(m)[2] >= 0,
+        ifelse(
+                {coef(m)[2] >= 0},
                {eq <- substitute(italic(y) == a + b %.% italic(x)*","~~italic(r)^2~"="~r2,l)},
-               {eq <- substitute(italic(y) == a - b %.% italic(x)*","~~italic(r)^2~"="~r2,l)}) 
+               {eq <- substitute(italic(y) == a - b %.% italic(x)*","~~italic(r)^2~"="~r2,l)}
+               ) 
         as.character(as.expression(eq))
 }
 
@@ -553,121 +574,4 @@ specify_decimal <- function(x, k) {
 # stat_smooth_func --------------------------------------------------------
 # from https://gist.github.com/kdauria/524eade46135f6348140
 
-#' stat_smooth_func
-stat_smooth_func <- function(mapping = NULL, data = NULL,
-                             geom = "smooth", position = "identity",
-                             ...,
-                             method = "auto",
-                             formula = y ~ x,
-                             se = TRUE,
-                             n = 80,
-                             span = 0.75,
-                             fullrange = FALSE,
-                             level = 0.95,
-                             method.args = list(),
-                             na.rm = FALSE,
-                             show.legend = NA,
-                             inherit.aes = TRUE,
-                             xpos = NULL,
-                             ypos = NULL) {
-        layer(
-                data = data,
-                mapping = mapping,
-                stat = StatSmoothFunc,
-                geom = geom,
-                position = position,
-                show.legend = show.legend,
-                inherit.aes = inherit.aes,
-                params = list(
-                        method = method,
-                        formula = formula,
-                        se = se,
-                        n = n,
-                        fullrange = fullrange,
-                        level = level,
-                        na.rm = na.rm,
-                        method.args = method.args,
-                        span = span,
-                        xpos = xpos,
-                        ypos = ypos,
-                        ...
-                )
-        )
-}
-
-
-StatSmoothFunc <- ggproto("StatSmooth", Stat,
-                          
-                          setup_params = function(data, params) {
-                                  # Figure out what type of smoothing to do: loess for small datasets,
-                                  # gam with a cubic regression basis for large data
-                                  # This is based on the size of the _largest_ group.
-                                  if (identical(params$method, "auto")) {
-                                          max_group <- max(table(data$group))
-                                          
-                                          if (max_group < 1000) {
-                                                  params$method <- "loess"
-                                          } else {
-                                                  params$method <- "gam"
-                                                  params$formula <- y ~ s(x, bs = "cs")
-                                          }
-                                  }
-                                  if (identical(params$method, "gam")) {
-                                          params$method <- mgcv::gam
-                                  }
-                                  
-                                  params
-                          },
-                          
-                          compute_group = function(data, scales, method = "auto", formula = y~x,
-                                                   se = TRUE, n = 80, span = 0.75, fullrange = FALSE,
-                                                   xseq = NULL, level = 0.95, method.args = list(),
-                                                   na.rm = FALSE, xpos=NULL, ypos=NULL) {
-                                  if (length(unique(data$x)) < 2) {
-                                          # Not enough data to perform fit
-                                          return(data.frame())
-                                  }
-                                  
-                                  if (is.null(data$weight)) data$weight <- 1
-                                  
-                                  if (is.null(xseq)) {
-                                          if (is.integer(data$x)) {
-                                                  if (fullrange) {
-                                                          xseq <- scales$x$dimension()
-                                                  } else {
-                                                          xseq <- sort(unique(data$x))
-                                                  }
-                                          } else {
-                                                  if (fullrange) {
-                                                          range <- scales$x$dimension()
-                                                  } else {
-                                                          range <- range(data$x, na.rm = TRUE)
-                                                  }
-                                                  xseq <- seq(range[1], range[2], length.out = n)
-                                          }
-                                  }
-                                  # Special case span because it's the most commonly used model argument
-                                  if (identical(method, "loess")) {
-                                          method.args$span <- span
-                                  }
-                                  
-                                  if (is.character(method)) method <- match.fun(method)
-                                  
-                                  base.args <- list(quote(formula), data = quote(data), weights = quote(weight))
-                                  model <- do.call(method, c(base.args, method.args))
-                                  
-                                  m = model
-                                  eq <- substitute(italic(y) == a + b %.% italic(x)*","~~italic(r)^2~"="~r2, 
-                                                   list(a = format(coef(m)[1], digits = 3), 
-                                                        b = format(coef(m)[2], digits = 3), 
-                                                        r2 = format(summary(m)$r.squared, digits = 3)))
-                                  func_string = as.character(as.expression(eq))
-                                  
-                                  if(is.null(xpos)) xpos = min(data$x)*0.9
-                                  if(is.null(ypos)) ypos = max(data$y)*0.98
-                                  data.frame(x=xpos, y=ypos, label=func_string)
-                                  
-                          },
-                          
-                          required_aes = c("x", "y")
-)
+source("stat_smooth_func.R")

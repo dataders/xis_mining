@@ -41,13 +41,6 @@ quartile.corpus <- VectorSource(quartile.comments) %>% Corpus
 #make dtc from corpus
 quart.dtm <- GetDocumentTermMatrix(quartile.corpus, 2,5, norm = TRUE)
 
-#take quartiles get freq list and sorted by LenNorm
-idx <- 4
-indv.ngrams <- quart.dtm[idx,] %>% CollapseAndSortDTM 
-indv.ngrams <- indv.ngrams %>%
-        mutate(length = CountWords(Words)) %>%
-        mutate(LenNorm = length * freq) %>%
-        arrange(desc(LenNorm))
+all.tfidf <- GetAllTfIdfMatricesFromCorpus(quartile.corpus, 2,5, norm = TRUE)
 
-
-works <- GetPrunedList(indv.ngrams, 100)
+all.pruned <- lapply(all.tfidf, GetPrunedList, prune_thru = 200)
