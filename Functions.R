@@ -366,14 +366,10 @@ GetAllTfIdfMatricesFromGroupedCorpus <- function(group.corpus, nmin, nmax, norm)
 #'      @param all.tfidf: a list of tfidx matrixes
 #'      @param prune_thru: 
 #' OUTPUT: a list of pruned matrixes of unique ngrams for each member
-GetPrunedListsFromGroupTfidfMatrices <- function(all.tfidf, prune_thru) {
+GetPrunedListsFromGroupTfidfMatrices <- function(all.tfidf, prune) {
 
         #for each table in all.tfidf, select some of the columns and prune what's there
-        all.pruned <- lapply(all.tfidf, function(x) {
-                x %>%
-                        select(ngrams = Words, tfidfXlength = LenNorm) %>%
-                        GetPrunedList(prune_thru)
-        })
+        all.pruned <- lapply(all.tfidf, GetPrunedList, prune_thru = prune)
 }
 
 # Admin Plus --------------------------------------------------------------
