@@ -66,4 +66,10 @@ ggsave("MAP/Years.At.XIS~Spring.Lang.Percentile_bygrade.png", width = 6, height 
 
 
 
+ggplot(data = year.report.byclass, aes(t12.growth)) +
+        geom_histogram( binwidth = 0.5) +
+        geom_vline(xintercept = 0) +
+        facet_wrap(~ Teacher) +
+        labs(title ="T1-T2 Change in MYP GPA by Teacher", x = "T1-T2 Change in GPA", y= "# of MYP Students")
 
+ggsave("figures/T1-T2 Change in MYP GPA by Teacher.png", width = 8, height = 8)
