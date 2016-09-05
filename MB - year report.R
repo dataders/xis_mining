@@ -31,7 +31,8 @@ year.report <- year.report %>%
         #add improvement from t1->t3
         mutate(t12.growth = CriMean.t3 - CriMean.t1,
                t23.growth = CriMean.t3 - CriMean.t2,
-               t13.growth = CriMean.t3 - CriMean.t1)
+               t13.growth = CriMean.t3 - CriMean.t1) %>%
+        mutate_each(funs(round(.,3)), starts_with("CriMean.t"), ends_with(".growth"))
 
 #wrappers for mean and sd with na.rm = TRUE
 av <- function(x) {

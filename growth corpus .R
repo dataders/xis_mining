@@ -1,30 +1,29 @@
 #set wd and paths and source functions
-source("Functions.R")
 setwd("/Users/andersswanson/Desktop/comment\ mining")
+source("Functions.R")
+source("MB - t12 growth.R")
 
-#load MB reports
+#load t1 comments
 t1.report <- GetReportsDFfromMBcsv("data/t1 comments.csv")
-t2.report <- GetReportsDFfromMBcsv("data/t2 comments.csv")
 t1.corpus <- GetCorpusFromReportDF(t1.report)
 t1.corpus.student <- GetGroupCorpusfromCommentCorpus(t1.corpus, "student")
 
-#finding subset comments where student made improvement
-by.cols <- c("Student.ID", "Last.Name", "First.Name",
-             "Grade.Level", "Subject", "Teacher")
-t12.report <- merge(t1.report, t2.report,
-                    by = by.cols, suffixes = c(".t1", ".t2")) %>%
-        mutate(class.growth = CriMean.t2 - CriMean.t1) %>%
-        within(class.growth.quartile <- as.integer(cut(class.growth,
-                                                       quantile(class.growth, probs=0:4/4,
+#get year report with added z-scored t12.growth score appended
+year.report.byclass <- GetT12StdGrowthfromYearReport() %>%
+        #make quartiles of t12.zgrowth variable
+        within(t12.zgrowth.quartile <- as.integer(cut(t12.zgrowth,
+                                                       quantile(t12.zgrowth, probs=0:4/4,
                                                                 na.rm = TRUE),
-                                                       include.lowest=TRUE)))
-#add ID.SUB column
-t12.report <- t12.report %>% mutate(ID.SUB = paste(Student.ID, Subject))
+                                                       include.lowest=TRUE))) %>%
+        #add ID.SUB column (for cross-ref w/ t1 corpus)
+        mutate(ID.SUB = paste(Student.ID, Subject))
+
+
 
 #get 4 quartiles of ID.SUB's 
 quarts <- c(1,2,3,4)
 quartiles <- lapply(quarts, function(x) {
-        t12.report %>% filter(class.growth.quartile == x) %>%
+        year.report.byclass %>% filter(t12.zgrowth.quartile == x) %>%
                 .$ID.SUB
 })
 
@@ -39,8 +38,17 @@ quartile.comments <- lapply(quartiles, function(x) {
 quartile.corpus <- VectorSource(quartile.comments) %>% Corpus
 
 #make dtc from corpus
-quart.dtm <- GetDocumentTermMatrix(quartile.corpus, 2,5, norm = TRUE)
-
-all.tfidf <- GetAllTfIdfMatricesFromCorpus(quartile.corpus, 2,5, norm = TRUE)
+all.tfidf <- GetAllTfIdfMatricesFromCorpus(quartile.corpus, 1,4, norm = TRUE)
 
 all.pruned <- lapply(all.tfidf, GetPrunedList, prune_thru = 200)
+
+
+test <- cbind(unlist(sapply(1:4, function(x) {all.pruned[[x]]}), recursive = FALSE))
+
+
+test <- lapply(1:4, function(x) {
+        tmp <- all.pruned[[x]]
+        tmp[1:20,"ngrams"]
+                          })
+
+test2 <- do.call(cbind, test)
