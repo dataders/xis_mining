@@ -8,7 +8,6 @@ dyn.load('/Library/Java/JavaVirtualMachines/jdk1.8.0_101.jdk/Contents/Home/jre/l
 library(dplyr)
 library(tm)
 library(tidyr)
-library(SnowballC)
 library(RWeka)
 library(xlsx)
 library(lubridate)
