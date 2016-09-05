@@ -1,6 +1,8 @@
 ---
 title: "Comment Mining Write Up"
+author: "Anders Swanson"
 output: html_document
+bibliography: library.bib
 ---
 
 ```{r setup, include=FALSE}
@@ -8,21 +10,39 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 
-## Purpose  
-### 1. Seek out what an "effective" comment is.  
-At my private, trimester-based, MYP school we three "grading" periods a year. One  
-### 2. Enhance Creativity of Teachers  
-I love the conversations I've heard in workshops concerning "data-driven" learning and action research. However, the majority of tools for educational data analysis (MAP, SAT, Atlas Rubicon) the intended audience is really the adminstrators. I'm very
-### 3. Learn R
-I started this project having only competed the first few courses of the Johns Hopkins Data Science specialization series on Coursera. I knew basics of R but I hoped to become more fluent as I went.
+### PURPOSE  
+#### *(i.e. By completing this project, I would like to...)*  
 
+
+##### 1. Seek out what an "effective" comment is.  
+Full disclosure:  
+* I strongly dislike writing comments.  
+* I think WAY too much.  
+
+I just finished four years at Xiamen International School: a private, MYP K-12 school with three "grading" periods a year.
+
+ > The report card should, above all else, be user-friendly: Parents must be able to easily understand the information it contains. --*Ender Wiggins* [@Wiggins1994]
+
+##### 2. Enhance Creativity of Teachers  
+I love the conversations I've heard in workshops concerning "data-driven" learning and action research. However, the majority of tools for educational data analysis (MAP, SAT, Atlas Rubicon) the intended audience is really the adminstrators. I'm very  
+
+##### 3. Learn R
+I started this project having only competed the first few courses of the Johns Hopkins Data Science specialization series on Coursera. I knew basics of R but I hoped to become more fluent as I went. 
+
+
+---
 ## Principles
-### 1. Share results with community
-That's why I've got the notebook!
-### 2. Enhance Creativity of Teachers
-I love the conversations I've heard in workshops concerning "data-driven" learning and action research. However, the majority of tools for educational data analysis (MAP, SAT, Atlas Rubicon) the intended audience is really the adminstrators. I'm very
-### 3. Learn R
-I started this project having only competed the first few courses of the Johns Hopkins Data Science specialization series on Coursera. I knew basics of R but I hoped to become more fluent as I went.
+### 1. Share results with community  
+That's why I've got the notebook!  
+
+### 2. Produce reliable, readable, commented code  
+I love the conversations I've heard in workshops concerning "data-driven" learning and action research. However, the majority of tools for educational data analysis (MAP, SAT, Atlas Rubicon) the intended audience is really the adminstrators. I'm very  
+
+### 3. Be as objective as possible  
+I started this project having only competed the first few courses of the Johns Hopkins Data Science specialization series on Coursera. I knew basics of R but I hoped to become more fluent as I went.  
+
+### 4. Strive for "good enough"  
+
 
 ```{r }
 
@@ -42,3 +62,5 @@ plot(pressure)
 ```
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+# References  
