@@ -14,7 +14,7 @@ library(lubridate)
 library(ggplot2)
 library(stringr)
 library(devtools)
-devtools::source_gist('524eade46135f6348140')
+#devtools::source_gist('524eade46135f6348140')
 
 # ManageBac Reports---------------------------------------------------------
 
@@ -467,10 +467,11 @@ GetMAPbyID <- function(map.path) {
 GetPrunedList <- function(wordfreqdf, prune_thru = 100) {
         #take only first n items in list
         tmp <- head(wordfreqdf, n = prune_thru) %>%
+                #change column names
                 select(ngrams = Words, tfidfXlength = LenNorm)
         #for each ngram in list:
         t <- (lapply(1:nrow(tmp), function(x) {
-                #find overlap between ngram and all items in list (overlap = TRUE)
+                #find overlap between ngram and all items in list (where overlap = TRUE)
                 idx <- overlap(tmp[x, "ngrams"], tmp$ngrams)
                 #set overlap as false for itself and higher-scoring ngrams
                 idx[1:x] <- FALSE
