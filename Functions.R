@@ -5,8 +5,8 @@ dyn.load('/Library/Java/JavaVirtualMachines/jdk1.8.0_101.jdk/Contents/Home/jre/l
 
 
 #load required libraries, data, and created functions
-library(dplyr)
 library(tm)
+library(dplyr)
 library(tidyr)
 library(RWeka)
 library(xlsx)
@@ -14,7 +14,7 @@ library(lubridate)
 library(ggplot2)
 library(stringr)
 library(devtools)
-#source_gist("524eade46135f6348140")
+devtools::source_gist('524eade46135f6348140')
 
 # ManageBac Reports---------------------------------------------------------
 

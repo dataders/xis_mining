@@ -10,42 +10,63 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 
-### PURPOSE  
-#### *(i.e. By completing this project, I would like to...)*  
-
+### **Purpose**  
 
 ##### 1. Seek out what an "effective" comment is.  
 Full disclosure:  
 * I strongly dislike writing comments.  
 * I think WAY too much.  
 
-I just finished four years at Xiamen International School: a private, MYP K-12 school with three "grading" periods a year.
+I just finished four years at Xiamen International School: a private, MYP K-12 school with three "grading" periods a year. At the end of every trimester the system teachers reported student's achievement against the MYP subject-specific criteria rubrics (e.g. in Mathematics: A: Knowing and Understanding, B: Investigating Patterns, C: Communicating, D: Applying Math in Real-Life) that were used that trimester.
+
+In addition to criterion-based reporting, teachers wrote a three-sentence narrative comment about the students achievement in this format:  
+1. An area in which the student did well  
+2. An area in which the student could improve  
+3. A recommendation as to how the student could improve in the above area.  
+
 
  > The report card should, above all else, be user-friendly: Parents must be able to easily understand the information it contains. --*Ender Wiggins* [@Wiggins1994]
 
 ##### 2. Enhance Creativity of Teachers  
-I love the conversations I've heard in workshops concerning "data-driven" learning and action research. However, the majority of tools for educational data analysis (MAP, SAT, Atlas Rubicon) the intended audience is really the adminstrators. I'm very  
+I love the conversations I've heard in workshops concerning "data-driven" learning and action research. However, the majority of tools for educational data analysis (MAP, SAT, Atlas Rubicon) the intended audience is really the adminstrators. 
 
 ##### 3. Learn R
 I started this project having only competed the first few courses of the Johns Hopkins Data Science specialization series on Coursera. I knew basics of R but I hoped to become more fluent as I went. 
 
 
----
-## Principles
-### 1. Share results with community  
-That's why I've got the notebook!  
+***
+### **Principles**  
+##### 1. Share results with community  
 
-### 2. Produce reliable, readable, commented code  
-I love the conversations I've heard in workshops concerning "data-driven" learning and action research. However, the majority of tools for educational data analysis (MAP, SAT, Atlas Rubicon) the intended audience is really the adminstrators. I'm very  
+This article is a start. [Full GitHub repository is here](https://github.com/swanderz/xis_mining)
 
-### 3. Be as objective as possible  
+##### 2. Produce reliable, readable, commented code  
+
+This is something I've I'd love to share the dataset but it contains and scrubbing all names from comments is something beyond my difficultly level currently. 
+
+"data can either be useful or perfectly anonymous but never both."
+
+##### 3. Be as objective as possible  
 I started this project having only competed the first few courses of the Johns Hopkins Data Science specialization series on Coursera. I knew basics of R but I hoped to become more fluent as I went.  
 
-### 4. Strive for "good enough"  
+##### 4. Strive for "good enough"  
 
+***
+### EDA - Exploratory Data Analysis  
 
-```{r }
+I'd like to do a basic repository
 
+```{r, eval = FALSE }
+#load required libraries, data, and created functions
+library(tm)
+library(dplyr)
+library(tidyr)
+library(RWeka)
+library(xlsx)
+library(lubridate)
+library(ggplot2)
+library(stringr)
+library(devtools)
 ```
 
 
