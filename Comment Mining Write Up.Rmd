@@ -25,7 +25,7 @@ In addition to criterion-based reporting, teachers wrote a three-sentence narrat
 3. A recommendation as to how the student could improve in the above area.  
 
 
- > The report card should, above all else, be user-friendly: Parents must be able to easily understand the information it contains. --*Ender Wiggins* [@Wiggins1994]
+ > The report card should, above all else, be user-friendly: Parents must be able to easily understand the information it contains. --*Grant Wiggins* [@Wiggins1994]
 
 ##### 2. Enhance Creativity of Teachers  
 I love the conversations I've heard in workshops concerning "data-driven" learning and action research. However, the majority of tools for educational data analysis (MAP, SAT, Atlas Rubicon) the intended audience is really the adminstrators. 
