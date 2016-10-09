@@ -22,9 +22,6 @@ source("MB - t12 growth.R")
 t1.report <- GetReportsDFfromMBcsv("data/t1 comments.csv")
 
 
-
-
-
 AnonymizeReport <- function(report) {
         
         
@@ -63,7 +60,10 @@ AnonymizeReport <- function(report) {
                        
                         #tests for broken comments
                         nickname = str_detect(Comment.Clean, regex.parenth),
-                        missed = !str_detect(Comment.Clean, "@@@"))
+                        missed = !str_detect(Comment.Clean, "@@@")) %>%
+                
+                #restructure to match input's columns i.e. drop added columns
+                select(Student.ID:CriMean, Student.Comment = Comment.Clean)
 }
 
 t1.report2 <- AnonymizeReport(t1.report)
