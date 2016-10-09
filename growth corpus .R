@@ -1,14 +1,36 @@
+
+# TO FIX ------------------------------------------------------------------
+
+#'
+#'  1) year report has to use name-scrubbed t1 comments, so...
+#'         2) scrubber has to output in same format as t1.report
+#'  B) take only the first and last n-tiles and compare them
+#'  C) collect stats on improvement for write-up
+
+# - OUTLINE ---------------------------------------------------------------
+
+#' STRUCTURE OF PROGRAM
+#' A) Get 
+
+
+# A) Source ---------------------------------------------------------------
+
 #set wd and paths and source functions
 setwd("/Users/andersswanson/Desktop/comment\ mining")
 source("Functions.R")
 source("MB - t12 growth.R")
 
-#load t1 comments
-t1.report <- GetReportsDFfromMBcsv("data/t1 comments.csv")
+
+# B) t1 Comments & Corpus ---------------------------------------
+
+t1.report <- GetReportsDFfromMBcsv("data/t1 comments.csv") %>% AnonymizeReport()
 t1.corpus <- GetCorpusFromReportDF(t1.report)
 t1.corpus.student <- GetGroupCorpusfromCommentCorpus(t1.corpus, "student")
 
-#get year report with added z-scored t12.growth score appended
+
+# C) Year Report w/ z-score ------------------------------------------
+
+# get year report with added z-scored t12.growth score appended
 year.report.byclass <- GetT12StdGrowthfromYearReport() %>%
         #make quartiles of t12.zgrowth variable
         within(t12.zgrowth.quartile <- as.integer(cut(t12.zgrowth,
@@ -19,6 +41,7 @@ year.report.byclass <- GetT12StdGrowthfromYearReport() %>%
         mutate(ID.SUB = paste(Student.ID, Subject))
 
 
+# D) Quartile Corpus ------------------------------------------------------------
 
 #get 4 quartiles of ID.SUB's 
 quarts <- c(1,2,3,4)
@@ -37,8 +60,11 @@ quartile.comments <- lapply(quartiles, function(x) {
 #make corpus (1 quartile = 1 document)
 quartile.corpus <- VectorSource(quartile.comments) %>% Corpus
 
+
+# E) Analysis -------------------------------------------------------------
+
 #make dtc from corpus
-all.tfidf <- GetAllTfIdfMatricesFromCorpus(quartile.corpus, 1,4, norm = TRUE)
+all.tfidf <- GetAllTfIdfMatricesFromCorpus(quartile.corpus, 2,5, norm = TRUE)
 
 all.pruned <- lapply(all.tfidf, GetPrunedList, prune_thru = 200)
 
