@@ -32,44 +32,44 @@ t1.corpus.student <- GetGroupCorpusfromCommentCorpus(t1.corpus, "student")
 
 # get year report with added z-scored t12.growth score appended
 year.report.byclass <- GetT12StdGrowthfromYearReport() %>%
-        #make quartiles of t12.zgrowth variable
-        within(t12.zgrowth.quartile <- as.integer(cut(t12.zgrowth,
-                                                       quantile(t12.zgrowth, probs=0:4/4,
+        #make quintiles of t12.zgrowth variable
+        within(t12.zgrowth.quintile <- as.integer(cut(t12.zgrowth,
+                                                       quantile(t12.zgrowth, probs=0:5/5,
                                                                 na.rm = TRUE),
                                                        include.lowest=TRUE))) %>%
         #add ID.SUB column (for cross-ref w/ t1 corpus)
         mutate(ID.SUB = paste(Student.ID, Subject))
 
 
-# D) Quartile Corpus ------------------------------------------------------------
+# D) quintile Corpus ------------------------------------------------------------
 
-#get 4 quartiles of ID.SUB's 
-quarts <- c(1,2,3,4)
-quartiles <- lapply(quarts, function(x) {
-        year.report.byclass %>% filter(t12.zgrowth.quartile == x) %>%
+#get 4 quintiles of ID.SUB's 
+quints <- c(1,2,3,4,5)
+quintiles <- lapply(quints, function(x) {
+        year.report.byclass %>% filter(t12.zgrowth.quintile == x) %>%
                 .$ID.SUB
 })
 
-#paste each quartile's comments into one comment
-quartile.comments <- lapply(quartiles, function(x) {
+#paste each quintile's comments into one comment
+quintile.comments <- lapply(quintiles, function(x) {
         idx <- t1.corpus %>% meta(tag = "ID.SUB") %in% x
         do.call(paste,content(t1.corpus[idx]))
 })
 
 
-#make corpus (1 quartile = 1 document)
-quartile.corpus <- VectorSource(quartile.comments) %>% Corpus
+#make corpus (1 quintile = 1 document)
+quintile.corpus <- VectorSource(quintile.comments) %>% Corpus
 
 
 # E) Analysis -------------------------------------------------------------
 
 #make dtc from corpus
-all.tfidf <- GetAllTfIdfMatricesFromCorpus(quartile.corpus, 2,5, norm = TRUE)
+all.tfidf <- GetAllTfIdfMatricesFromCorpus(quintile.corpus, 1,3, norm = TRUE)
 
 all.pruned <- lapply(all.tfidf, GetPrunedList, prune_thru = 200)
 
 
-test <- cbind(unlist(sapply(1:4, function(x) {all.pruned[[x]]}), recursive = FALSE))
+test <- cbind(unlist(sapply(1:5, function(x) {all.pruned[[x]]}), recursive = FALSE))
 
 
 test <- lapply(1:4, function(x) {
