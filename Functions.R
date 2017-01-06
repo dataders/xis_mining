@@ -19,6 +19,50 @@ library(devtools)
 # ManageBac Reports---------------------------------------------------------
 
 
+AnonymizeReport <- function(report) {
+        
+        
+        regex.parenth <- "[ ]*[(][a-z]+[)]"
+        
+        #Makes a regex for searching name instances where there are spaces
+        # beforehand (optional), and
+        # after        
+        RegexName <- function(names) {
+                non <- "\b"
+                str_c("/",non,names,non,"/g/", sep = "")
+        }
+        
+        report %>% 
+                #make lowercase vars below
+                mutate_each(funs(tolower), Last.Name, First.Name, Student.Comment) %>%
+                #remove newline chr
+                mutate(Student.Comment = str_replace_all(Student.Comment, "\n", "")) %>%
+                # remove empty comments
+                filter(Student.Comment != "") %>%
+                #Modify
+                mutate(
+                        #take off nickname from First.Name
+                        Legal.Name = str_replace(First.Name, regex.parenth, ""),
+                        #remove hyphen from First.Name
+                        Unpunct.Name = str_replace(Legal.Name, "-", " ")) %>%
+                
+                #scrub ____ from comment w/ regex:
+                mutate(Comment.Clean = 
+                               #1) Legal Name
+                               str_replace_all(Student.Comment, Legal.Name, "@@@") %>%
+                               #2) Last Name        
+                               str_replace_all(RegexName(Last.Name), "@@@") %>%
+                               #3) Unpunctuated name
+                               str_replace_all(Unpunct.Name, "@@@"),
+                       
+                       #tests for broken comments
+                       nickname = str_detect(Comment.Clean, regex.parenth),
+                       missed = !str_detect(Comment.Clean, "@@@")) %>%
+                
+                #restructure to match input's columns i.e. drop added columns
+                select(Student.ID:CriMean, Student.Comment = Comment.Clean)
+}
+
 #takes file path of MB reports csv and returns a df w/empty columns removed;
 #splits: 1) comment in class and comments split into class and student
 #
