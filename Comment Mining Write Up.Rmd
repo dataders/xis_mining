@@ -8,7 +8,13 @@ bibliography: library.bib
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+### **Research Question**  
 
+#### Ideal question
+> What effect do teacher-written trimester comments have on future student performance?*
+
+#### Realistic question
+> How does the language used to describe students in trimester one comments vary depending on level of improvement in trimester two?
 
 ### **Purpose**  
 
@@ -28,10 +34,10 @@ In addition to criterion-based reporting, teachers wrote a three-sentence narrat
  > The report card should, above all else, be user-friendly: Parents must be able to easily understand the information it contains. --*Grant Wiggins* [@Wiggins1994]
 
 ##### 2. Enhance Creativity of Teachers  
-I love the conversations I've heard in workshops concerning "data-driven" learning and action research. However, the majority of tools for educational data analysis (MAP, SAT, Atlas Rubicon) the intended audience is really the adminstrators. 
+I love the conversations I've heard in workshops concerning "data-driven" learning and action research. However, the majority of tools for educational data analysis (MAP, SAT, Atlas Rubicon) the intended audience is really the administrators. I want to focus on practice-based recommendations for helping teachers teach.
 
 ##### 3. Learn R
-I started this project having only competed the first few courses of the Johns Hopkins Data Science specialization series on Coursera. I knew basics of R but I hoped to become more fluent as I went. 
+I started this project having only competed the first few courses of the Johns Hopkins Data Science specialization series on Coursera. I knew basics of R but I hoped to become more fluent as I went. I've definitely learned a lot and moved beyond the syntax to understand more about R, especially packages like tm, dplyr, and ggplot2.
 
 
 ***
@@ -42,7 +48,7 @@ This article is a start. [Full GitHub repository is here](https://github.com/swa
 
 ##### 2. Produce reliable, readable, commented code  
 
-This is something I've I'd love to share the dataset but it contains and scrubbing all names from comments is something beyond my difficultly level currently. 
+This is something I've I'd love to share the data set but it contains and scrubbing all names from comments is something beyond my difficultly level currently. 
 
 "data can either be useful or perfectly anonymous but never both."
 
@@ -50,13 +56,14 @@ This is something I've I'd love to share the dataset but it contains and scrubbi
 I started this project having only competed the first few courses of the Johns Hopkins Data Science specialization series on Coursera. I knew basics of R but I hoped to become more fluent as I went.  
 
 ##### 4. Strive for "good enough"  
+I've started and stopped this project three times now over the course of a year. I've branched off and explored MANY different aspects of this dataset but in the end the story is original
 
-***
+
 ### EDA - Exploratory Data Analysis  
 
-I'd like to do a basic repository
+First I'll start by loading all the extra packages I used for my analysis.
 
-```{r, eval = FALSE }
+```{r libraries & source, message = FALSE}
 #load required libraries, data, and created functions
 library(tm)
 library(dplyr)
@@ -67,13 +74,43 @@ library(lubridate)
 library(ggplot2)
 library(stringr)
 library(devtools)
+library(knitr)
+
+#set wd and paths and source functions
+setwd("/Users/andersswanson/Desktop/comment\ mining")
+source("Functions.R")
+source("MB - t12 growth.R")
 ```
 
+Then I'll load the csv file I got by exporting term grades from ManageBac
+```{r t1.report, , warning = FALSE}
+ t1.report <- GetReportsDFfromMBcsv("data/t1 comments.csv")
 
-```{r cars}
-summary(cars)
+#find dimensions (rows & columns) of the table
+dim(t1.report)
+
+#get column names
+colnames(t1.report)
 ```
 
+So this table has 14 columns 1066 rows, where each row is one student's report for one class
+
+```{r sample table, warning = FALSE}
+
+
+t1.report.ex <- t1.report %>%
+        select(-Student.Comment) %>%
+        sample_n(8)
+        #head(10)
+t1.report.ex$Student.ID <- "1000****"
+t1.report.ex$First.Name <- "****"
+t1.report.ex$Last.Name <- "****"
+kable(t1.report.ex, digits = 2)
+
+
+```
+
+The above table shows eight randomly selected reports. 
 ## Including Plots
 
 You can also embed plots, for example:
