@@ -114,6 +114,7 @@ GetReportsDFfromMBcsv <- function(csv.path) {
         }
         
         df$CriMean <- rowMeans(select(df, Cri.A:Cri.D), na.rm = TRUE)
+        df$CriMean[is.nan(df$CriMean)] <- NA
         df <- df %>% select(Student.ID, Last.Name, First.Name, Class.ID,
                             Grade.Level, Subject, Teacher,
                             Cri.A, Cri.B, Cri.C, Cri.D,
