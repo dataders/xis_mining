@@ -137,6 +137,42 @@ GetMeanBreakdownFromReport <- function(report) {
         report.stats
 }
 
+GetYearReport <- function() {
+        #load MB reports
+        t1.report <- GetReportsDFfromMBcsv("data/t1 comments.csv")
+        t2.report <- GetReportsDFfromMBcsv("data/t2 comments.csv")
+        t3.report <- GetReportsDFfromMBcsv("data/t3 comments.csv")
+        
+        #create vector of columnnames to counteract ugly double join 
+        by.cols <- c("Student.ID", "Last.Name", "First.Name", "Class.ID",
+                     "Grade.Level", "Subject", "Teacher")
+        s <- c("Cri.A", "Cri.B", "Cri.C", "Cri.D", "Sum", "CriMean", "Student.Comment")
+        t <-c(".t1", ".t2", ".t3")
+        t.stats <- unlist(lapply(t,function(x) {paste(s,x, sep = "")}))
+        year.report.cols <- c(by.cols, t.stats)
+        
+        #join twice, setnames to desired column names
+        year.report <- setNames(
+                #join t1 to t2 then join result to t2
+                left_join(t1.report, t2.report, by = by.cols) %>% 
+                        left_join(t3.report, by = by.cols),
+                #name columns based on above
+                year.report.cols)
+        
+        #remove duplicate and add improvement metrics
+        year.report <- year.report %>%
+                #make an "idx column to find and remove duplicates
+                mutate(idx = paste(Student.ID, Subject, Teacher)) %>%
+                distinct(idx, .keep_all = TRUE) %>%
+                select(everything(), -idx) %>%
+                #add improvement from t1->t3
+                mutate(t12.growth = CriMean.t2 - CriMean.t1,
+                       t23.growth = CriMean.t3 - CriMean.t2,
+                       t13.growth = CriMean.t3 - CriMean.t1) %>%
+                mutate_each(funs(round(.,3)), starts_with("CriMean.t"), ends_with(".growth"))
+        
+}
+
 # Corpora: Creation and Cleaning ------------------------------------------
 
 # change to all lowercase, strip whitespace numbers and punctuation,
