@@ -75,6 +75,8 @@ library(ggplot2)
 library(stringr)
 library(devtools)
 library(knitr)
+library(pander)
+
 
 #set wd and paths and source functions
 setwd("/Users/andersswanson/Desktop/comment\ mining")
@@ -97,11 +99,13 @@ So this table has 14 columns 1066 rows, where each row is one student's report f
 
 ```{r sample table, warning = FALSE}
 
-
+#get an example table
 t1.report.ex <- t1.report %>%
+        #drop student comment column
         select(-Student.Comment) %>%
+        #take 8 rows at random
         sample_n(8)
-        #head(10)
+#anonymize personal identifiers
 t1.report.ex$Student.ID <- "1000****"
 t1.report.ex$First.Name <- "****"
 t1.report.ex$Last.Name <- "****"
@@ -110,15 +114,47 @@ kable(t1.report.ex, digits = 2)
 
 ```
 
-The above table shows eight randomly selected reports. 
-## Including Plots
+The above table shows eight randomly selected reports. Since at XIS it isn't requried that all four criteria be assessed each trimester it is necessary to create a performance metric for each student based on available evidence. Mean criteria score seemed to me to be most helful. From this it would seem that a simple subtraction like this would suffice:
 
-You can also embed plots, for example:
+> ${\text{Improvement}_{\text{T1-T2}}} = {\text{CriMean}}_{\text{T2}}-{\text{CriMean}}_{\text{T1}}$.
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+Would that it were so simple! We assume that if a student's levels went up from trimester one to trimester two then they improved in that class. However the following example highlights the difficulty of the assumption.
+
+```{r norm.ex, echo = FALSE}
+norm.ex <- read.csv("examples/normed_improvement_rationale.csv")
+kable(norm.ex, align = "l", caption = "Example Class T1-T2 Results")
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+Who improved more: Denise or Emily? I saw this phenomenon happen and decided that it warranted further investigation. 
+
+```{r subject.variation, echo = FALSE, warning = FALSE}
+#combine all three trimesters of data together
+year.report <- GetYearReport()
+
+#wrappers for mean and sd with na.rm = TRUE
+av <- function(x) {
+        mean(x, na.rm = TRUE)
+}
+s <- function(x) {
+        sd(x, na.rm = TRUE)
+}
+
+by_subject <- year.report %>%
+        group_by(Subject) %>%
+        summarize(t1.m = av(CriMean.t1), t1.s = s(CriMean.t1),
+                  t2.m = av(CriMean.t2), t2.s = s(CriMean.t2),
+                  t3.m = av(CriMean.t3), t3.s = s(CriMean.t3),
+                  t12.m = av(t12.growth), t12.s = s(t12.growth),
+                  t23.m = av(t23.growth), t23.s = s(t23.growth),
+                  t13.m = av(t13.growth), t13.s = s(t13.growth)) %>%
+        mutate_each(funs(round(.,2)), -Subject) %>%
+        select(-ends_with(".s"), -t13.m, -t23.m, -t3.m) %>%
+        transmute(Subject, CriMean.t1 = t1.m, CriMean.t2 = t2.m, Improvement.t12 = t12.m)
+kable(by_subject)
+pander.data.frame(by_subject)
+```
+
+Note The average growth should be the difference between the Criteria Means of trimester one and two but the average growth excludes mid-year students who: 1) typically don't do well in their 1st trimester of MYP and 2) are not represented in the T1-T2 growth statistic.
+
 
 # References  
