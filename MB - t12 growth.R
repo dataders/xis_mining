@@ -29,7 +29,7 @@ GetT12StdGrowthfromYearReport <- function() {
                 distinct(idx, .keep_all = TRUE) %>%
                 select(everything(), -idx) %>%
                 #add improvement from t1->t3
-                mutate(t12.growth = CriMean.t3 - CriMean.t1,
+                mutate(t12.growth = CriMean.t2 - CriMean.t1,
                        t23.growth = CriMean.t3 - CriMean.t2,
                        t13.growth = CriMean.t3 - CriMean.t1) %>%
                 mutate_each(funs(round(.,3)), starts_with("CriMean.t"), ends_with(".growth"))
