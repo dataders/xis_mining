@@ -13,7 +13,7 @@ bibliography: library.bib
 knitr::opts_chunk$set(echo = TRUE)
 ```
 ## Background
-### Research Question
+### Research Question thing
 
 #### Ideal question
 > What effect do teacher-written trimester comments have on future student performance?*
