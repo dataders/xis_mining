@@ -1,14 +1,19 @@
 ---
 title: "Comment Mining Write Up"
 author: "Anders Swanson"
-output: html_document
+output:
+  html_document:
+    depth: 4
+    toc: yes
+    theme: spacelab
 bibliography: library.bib
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-### **Research Question**  
+## Background
+### Research Question
 
 #### Ideal question
 > What effect do teacher-written trimester comments have on future student performance?*
@@ -16,7 +21,7 @@ knitr::opts_chunk$set(echo = TRUE)
 #### Realistic question
 > How does the language used to describe students in trimester one comments vary depending on level of improvement in trimester two?
 
-### **Purpose**  
+### Purpose  
 
 ##### 1. Seek out what an "effective" comment is.  
 Full disclosure:  
@@ -41,7 +46,7 @@ I started this project having only competed the first few courses of the Johns H
 
 
 ***
-### **Principles**  
+### Principles  
 ##### 1. Share results with community  
 
 This article is a start. [Full GitHub repository is here](https://github.com/swanderz/xis_mining)
@@ -59,8 +64,8 @@ I started this project having only competed the first few courses of the Johns H
 I've started and stopped this project three times now over the course of a year. I've branched off and explored MANY different aspects of this dataset but in the end the story is original
 
 
-### EDA - Exploratory Data Analysis  
-
+## Analysis
+### Set Up and EDA
 First I'll start by loading all the extra packages I used for my analysis.
 
 ```{r libraries & source, message = FALSE}
@@ -76,6 +81,7 @@ library(stringr)
 library(devtools)
 library(knitr)
 library(pander)
+library(DT)
 
 
 #set wd and paths and source functions
@@ -84,7 +90,7 @@ source("Functions.R")
 source("MB - t12 growth.R")
 ```
 
-Then I'll load the csv file I got by exporting term grades from ManageBac
+Now I'll load the csv file I got by exporting term grades from ManageBac
 ```{r t1.report, , warning = FALSE}
  t1.report <- GetReportsDFfromMBcsv("data/t1 comments.csv")
 
@@ -95,37 +101,90 @@ dim(t1.report)
 colnames(t1.report)
 ```
 
-So this table has 14 columns 1066 rows, where each row is one student's report for one class
+So this table has 14 columns 1066 rows, where each row is one student's report for one class.
 
 ```{r sample table, warning = FALSE}
 
 #get an example table
 t1.report.ex <- t1.report %>%
-        #drop student comment column
-        select(-Student.Comment) %>%
-        #take 8 rows at random
-        sample_n(8)
-#anonymize personal identifiers
-t1.report.ex$Student.ID <- "1000****"
-t1.report.ex$First.Name <- "****"
-t1.report.ex$Last.Name <- "****"
-kable(t1.report.ex, digits = 2)
+        #salt student IDs, round CriMean, 
+        mutate(Student.ID = "1000****", CriMean = round(CriMean, digits = 3)) %>%
+        #select only what I want
+        select(Student.ID, Grade.Level:Cri.D, CriMean, -First.Name, -Last.Name) %>%
+        #take 100 rows at random
+        sample_n(100)
 
+datatable(t1.report.ex, rownames = FALSE)
 
 ```
 
-The above table shows eight randomly selected reports. Since at XIS it isn't requried that all four criteria be assessed each trimester it is necessary to create a performance metric for each student based on available evidence. Mean criteria score seemed to me to be most helful. From this it would seem that a simple subtraction like this would suffice:
+The above table shows a random sample of 100 reports. At XIS it isn't requried that all four criteria be assessed each trimester so mean criteria score was calculated.
 
-> ${\text{Improvement}_{\text{T1-T2}}} = {\text{CriMean}}_{\text{T2}}-{\text{CriMean}}_{\text{T1}}$.
+### The "Improvement" Metric
 
-Would that it were so simple! We assume that if a student's levels went up from trimester one to trimester two then they improved in that class. However the following example highlights the difficulty of the assumption.
+Before we get to measuring how much a student improves from trimester one to two, Lets start with an definition then an example.
 
-```{r norm.ex, echo = FALSE}
+#### Definition
+> **Improvement** -- the class-normalized increase of mean critera levels from trimester one to trimester two. 
+
+Normalized in this case to mean each individual criteria average is z-scored with the mean and SD within each class so as to get relative improvement with resepct to one's classmates. If that's confusing here's an example
+
+
+#### Example Methodology
+
+
+Let's use an example school with two classes of four students each taught by Ms. Blue and Ms. Green. Generally, Improvement in this instance is calculated as:
+$$
+{\text{Improvement}_{\text{T1-T2}}} = {\text{CriMean}}_{\text{T2}}-{\text{CriMean}}_{\text{T1}}
+$$
+
+```{r norm.ex 1, echo = FALSE}
 norm.ex <- read.csv("examples/normed_improvement_rationale.csv")
-kable(norm.ex, align = "l", caption = "Example Class T1-T2 Results")
+datatable(norm.ex, caption = "Example Class T1-T2 Results", rownames = FALSE, options = list(dom = 't'))
 ```
 
-Who improved more: Denise or Emily? I saw this phenomenon happen and decided that it warranted further investigation. 
+<br><br>
+
+We assume that if a student's levels went up from trimester one to trimester two then they improved in that class. However in the above example, who improved more: Denise or Emily? Due to large variation in criteria levels between teachers and classes, this is something that needs adressing.
+<br><br>
+ To account for this difference I decided to **normalize improvement against the the class they were in[^2]** . The improvement metric is modified to a z-score, that is to say, the mean and standard deviation of each individual class is computed then each individuals improvement is put on a scale respective to the class. Accordingly, the mean and SD of Ms. Green and Ms. Blue's class is:
+ 
+```{r norm.ex2}
+by_teacher <- norm.ex %>%
+        group_by(Teacher) %>%
+        summarize(Improve.m = mean(Improvement), Improve.sd = sd(Improvement))
+kable(by_teacher)
+```
+
+ 
+<br><br>
+
+ The general formula for computing a z-score is:
+ $$
+  z = \frac{X - μ}{σ}
+ $$
+ But in our case it is:
+ $$
+  z = \frac{{Improvement}_{student} - {Improve}_m}{{Improve}_{sd}}
+ $$
+So using the above formula we get the following column displaying our new improvement metric. Its worth noting that a negative z-score does not necessarily mean that the student decreased, but that they increased less than the average of the class.
+
+```{r norm.ex 3}
+norm.ex.by_teacher <- left_join(norm.ex, by_teacher, by = "Teacher") %>%
+        #normalize the t12.growth by mean & sd of teacher t12.growth
+        mutate(Improve.zgrowth = (Improvement - Improve.m)/Improve.sd) %>%
+        mutate_each(funs(round(.,3)), -Student, -Teacher) %>%
+        select(Student, Teacher, Improvement:Improve.zgrowth)
+        
+datatable(norm.ex.by_teacher, rownames = FALSE, options = list(dom = 't'))
+```
+
+<br><br>
+
+#### XIS's Improvement
+
+So now to the XIS data, below is a table showing the average criteria levels for each subject in the MYP for both trimester one and two as well as the difference[^1] between them.
+
 
 ```{r subject.variation, echo = FALSE, warning = FALSE}
 #combine all three trimesters of data together
@@ -150,11 +209,14 @@ by_subject <- year.report %>%
         mutate_each(funs(round(.,2)), -Subject) %>%
         select(-ends_with(".s"), -t13.m, -t23.m, -t3.m) %>%
         transmute(Subject, CriMean.t1 = t1.m, CriMean.t2 = t2.m, Improvement.t12 = t12.m)
-kable(by_subject)
-pander.data.frame(by_subject)
+datatable(by_subject, caption = "T1-T2 Average Criteria Levels by Subject*", options = list(dom = 't'))
 ```
 
-Note The average growth should be the difference between the Criteria Means of trimester one and two but the average growth excludes mid-year students who: 1) typically don't do well in their 1st trimester of MYP and 2) are not represented in the T1-T2 growth statistic.
+We can see from the table that the average criteria improvement varies amongst the subjects. This holds true for grade levels, teachers and individual classes.
 
-
-# References  
+### The Comments
+#Findings
+#Evaluation
+# References  & Footnotes
+[^1]: The average growth should be the difference between the Criteria Means of trimester one and two but the average growth excludes mid-year students who: 1) typically don't do well in their 1st trimester of MYP and 2) are not represented in the T1-T2 growth statistic.
+[^2]: A lot of assumptions going on here....
