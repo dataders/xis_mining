@@ -13,7 +13,7 @@ bibliography: library.bib
 knitr::opts_chunk$set(echo = TRUE)
 ```
 ## Background
-### Research Question thing
+### Research Question
 
 #### Ideal question
 > What effect do teacher-written trimester comments have on future student performance?*
@@ -21,10 +21,14 @@ knitr::opts_chunk$set(echo = TRUE)
 #### Realistic question
 > How does the language used to describe students in trimester one comments vary depending on level of improvement in trimester two?
 
+***
 ### Purpose  
 
+<br><br>
+
 ##### 1. Seek out what an "effective" comment is.  
-Full disclosure:  
+Full disclosure:
+
 * I strongly dislike writing comments.  
 * I think WAY too much.  
 
@@ -42,11 +46,14 @@ In addition to criterion-based reporting, teachers wrote a three-sentence narrat
 I love the conversations I've heard in workshops concerning "data-driven" learning and action research. However, the majority of tools for educational data analysis (MAP, SAT, Atlas Rubicon) the intended audience is really the administrators. I want to focus on practice-based recommendations for helping teachers teach.
 
 ##### 3. Learn R
-I started this project having only competed the first few courses of the Johns Hopkins Data Science specialization series on Coursera. I knew basics of R but I hoped to become more fluent as I went. I've definitely learned a lot and moved beyond the syntax to understand more about R, especially packages like tm, dplyr, and ggplot2.
+I started this project having only competed the first few courses of the Johns Hopkins Data Science specialization series on Coursera. I knew basics of R but I hoped to become more fluent as I went. I've definitely learned a lot and moved beyond the syntax to understand more about R, especially packages like tm, dplyr, knitr, and ggplot2.
 
 
 ***
-### Principles  
+### Principles
+
+<br><br>
+
 ##### 1. Share results with community  
 
 This article is a start. [Full GitHub repository is here](https://github.com/swanderz/xis_mining)
@@ -63,9 +70,15 @@ I started this project having only competed the first few courses of the Johns H
 ##### 4. Strive for "good enough"  
 I've started and stopped this project three times now over the course of a year. I've branched off and explored MANY different aspects of this dataset but in the end the story is original
 
-
+***
 ## Analysis
+
+<br><br>
+
 ### Set Up and EDA
+
+<br><br>
+
 First I'll start by loading all the extra packages I used for my analysis.
 
 ```{r libraries & source, message = FALSE}
@@ -120,7 +133,10 @@ datatable(t1.report.ex, rownames = FALSE)
 
 The above table shows a random sample of 100 reports. At XIS it isn't requried that all four criteria be assessed each trimester so mean criteria score was calculated.
 
+***
 ### The "Improvement" Metric
+
+<br><br>
 
 Before we get to measuring how much a student improves from trimester one to two, Lets start with an definition then an example.
 
@@ -212,11 +228,53 @@ by_subject <- year.report %>%
 datatable(by_subject, caption = "T1-T2 Average Criteria Levels by Subject*", options = list(dom = 't'))
 ```
 
+<br><br>
+
 We can see from the table that the average criteria improvement varies amongst the subjects. This holds true for grade levels, teachers and individual classes.
 
+Now we the improvement metric for each class
+
 ### The Comments
+
+<br><br>
+
+The general format for XIS trimester comments for students is two paragraphs:
+
+* A paragraph about what happened in class that trimester generally
+* A paragraph of three sentences each of which performs the following function of saying something the student:
+
+    + has done well,
+    + the student struggles with, and
+    + can do to improve that with which they struggle. 
+
+A typical comment reads like this:
+
+*The MYP sixth grade science program at XIS is an intellectually challenging program that results in creative, critical, reflective thinkers.  It is designed to help students make connections between science and the real world.  Students are developing approaches to learning skills for thinking before writing responses and communicating using tables and graphs.  The first trimester focused on cells and disease.  The key concept was form.  Three criteria A-C were covered with the following summative assessments:  Criterion A- Unit test, Criterion B & C- design lab on yeast and Criterion C ' vertical leap investigation. *
+
+*\*\*\*\*[^3] is willing to work in class.  He has shown an improvement in submission and achievement in assessment tasks over the first trimester.  Further attention to the detail required for different assessment criteria should allow \*\*\*\* continued improvement.  He is encouraged to write independently first so that advice can be provided on written work rather than risk forgetting how the verbal advice affects his achievement level.*
+
+<br><br>
+
+As teachers, when we write these comments, we hope that the student and his/her parents reads the comment, assimilate the feedback and improve. We have no way to know for sure that this happens. But I set out to learn more
+
+####EDA
+
+***
 #Findings
+
+<br><br>
+
+This is what I found  
+
+***
 #Evaluation
+
+<br><br>
+
+This is how good of a job I did.
+
+***
 # References  & Footnotes
 [^1]: The average growth should be the difference between the Criteria Means of trimester one and two but the average growth excludes mid-year students who: 1) typically don't do well in their 1st trimester of MYP and 2) are not represented in the T1-T2 growth statistic.
 [^2]: A lot of assumptions going on here....
+[^3]: Name removed for privacy
