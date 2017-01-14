@@ -127,7 +127,7 @@ t1.report.ex <- t1.report %>%
         #take 100 rows at random
         sample_n(100)
 
-datatable(t1.report.ex, rownames = FALSE)
+datatable(t1.report.ex, rownames = FALSE, class = 'compact')
 
 ```
 
@@ -214,25 +214,54 @@ s <- function(x) {
         sd(x, na.rm = TRUE)
 }
 
+# by_subject <- year.report %>%
+#         group_by(Subject) %>%
+#         summarize(t1.m = av(CriMean.t1), t1.s = s(CriMean.t1),
+#                   t2.m = av(CriMean.t2), t2.s = s(CriMean.t2),
+#                   t3.m = av(CriMean.t3), t3.s = s(CriMean.t3),
+#                   t12.m = av(t12.growth), t12.s = s(t12.growth),
+#                   t23.m = av(t23.growth), t23.s = s(t23.growth),
+#                   t13.m = av(t13.growth), t13.s = s(t13.growth)) %>%
+#         mutate_each(funs(round(.,2)), -Subject) %>%
+#         select(-ends_with(".s"), -t13.m, -t23.m, -t3.m) %>%
+#         transmute(Subject, CriMean.t1 = t1.m, CriMean.t2 = t2.m, Improvement.t12 = t12.m)
+
+
 by_subject <- year.report %>%
         group_by(Subject) %>%
-        summarize(t1.m = av(CriMean.t1), t1.s = s(CriMean.t1),
-                  t2.m = av(CriMean.t2), t2.s = s(CriMean.t2),
-                  t3.m = av(CriMean.t3), t3.s = s(CriMean.t3),
-                  t12.m = av(t12.growth), t12.s = s(t12.growth),
-                  t23.m = av(t23.growth), t23.s = s(t23.growth),
-                  t13.m = av(t13.growth), t13.s = s(t13.growth)) %>%
+        summarize(CriMean.t1 = av(CriMean.t1), CriMean.t2 = av(CriMean.t2),
+                  Imp.m = av(t12.growth), Imp.sd = s(t12.growth)) %>%
+        mutate(centralized_improvement = Imp.m - mean(Imp.m)) %>%
         mutate_each(funs(round(.,2)), -Subject) %>%
-        select(-ends_with(".s"), -t13.m, -t23.m, -t3.m) %>%
-        transmute(Subject, CriMean.t1 = t1.m, CriMean.t2 = t2.m, Improvement.t12 = t12.m)
-datatable(by_subject, caption = "T1-T2 Average Criteria Levels by Subject*", options = list(dom = 't'))
+        ungroup()
+datatable(by_subject, caption = "T1-T2 Average Criteria Levels by Subject*",
+          class = 'compact', options = list(pageLength = 12, dom = 't'),
+          rownames = FALSE)
 ```
 
 <br><br>
 
 We can see from the table that the average criteria improvement varies amongst the subjects. This holds true for grade levels, teachers and individual classes.
 
-Now we the improvement metric for each class
+I think the be
+
+```{r t12.report - class variation, echo = FALSE, warning = FALSE}
+
+# wrapper
+
+
+#combine all three trimesters of data together
+year.report <- GetYearReport() %>%
+        select(Student.ID, Class.ID:Teacher, CriMean.t1, CriMean.t2, t12.growth) %>%
+        group_by(Class.ID) %>%
+        mutate(Student.ID = "1000****", t12.growth.centered = round(t12.growth - av(t12.growth), digits = 2)) %>%
+        ungroup() %>%
+        select( -Class.ID) %>%
+        sample_n(100)
+        
+datatable(year.report, caption = "Centralized Improvement Metric",
+          class = 'compact', rownames = FALSE)
+```
 
 ### The Comments
 
