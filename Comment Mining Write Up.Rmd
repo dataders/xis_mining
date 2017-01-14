@@ -284,9 +284,35 @@ A typical comment reads like this:
 
 <br><br>
 
-As teachers, when we write these comments, we hope that the student and his/her parents reads the comment, assimilate the feedback and improve. We have no way to know for sure that this happens. But I set out to learn more
+As teachers, when we write these comments, we hope that the student and his/her parents reads the comment, assimilate the feedback and improve. We have no way to know for sure that this happens. But I set out to learn more...
 
 ####EDA
+
+A breakdown of the comments from trimester 1. Number of
+* Students: 133
+* Reports: 1066
+* Words: 72,921
+
+
+Let's start by getting the top 10 words that 
+
+```{r top 10, warning = FALSE}
+
+t1.top10 <- GetReportsDFfromMBcsv("data/t1 comments.csv") %>%
+        GetCorpusFromReportDF() %>% 
+        DocumentTermMatrix() %>%
+        CollapseAndSortDTM() %>%
+        head(10) %>%
+        select(Words, freq) %>%
+        mutate( per.1000 = 1000 * freq / 72921)
+
+kable(t1.top10, col.names = c("Words, Frequency", "Freq per 1000 words"),
+      caption = "T1 Comments: Top 10 Most Word Used Words")
+```
+
+<br><br>
+
+Wow, how insightful! The
 
 ***
 #Findings
