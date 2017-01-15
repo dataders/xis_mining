@@ -12,7 +12,7 @@ bibliography: library.bib
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-## Background
+# Background
 ### Research Question
 
 #### Ideal question
@@ -71,7 +71,7 @@ I started this project having only competed the first few courses of the Johns H
 I've started and stopped this project three times now over the course of a year. I've branched off and explored MANY different aspects of this dataset but in the end the story is original
 
 ***
-## Analysis
+# Analysis
 
 <br><br>
 
@@ -202,30 +202,13 @@ datatable(norm.ex.by_teacher, rownames = FALSE, options = list(dom = 't'))
 So now to the XIS data, below is a table showing the average criteria levels for each subject in the MYP for both trimester one and two as well as the difference[^1] between them.
 
 
-```{r subject.variation, echo = FALSE, warning = FALSE}
+```{r subject.variation, warning = FALSE}
 #combine all three trimesters of data together
 year.report <- GetYearReport()
 
 #wrappers for mean and sd with na.rm = TRUE
-av <- function(x) {
-        mean(x, na.rm = TRUE)
-}
-s <- function(x) {
-        sd(x, na.rm = TRUE)
-}
-
-# by_subject <- year.report %>%
-#         group_by(Subject) %>%
-#         summarize(t1.m = av(CriMean.t1), t1.s = s(CriMean.t1),
-#                   t2.m = av(CriMean.t2), t2.s = s(CriMean.t2),
-#                   t3.m = av(CriMean.t3), t3.s = s(CriMean.t3),
-#                   t12.m = av(t12.growth), t12.s = s(t12.growth),
-#                   t23.m = av(t23.growth), t23.s = s(t23.growth),
-#                   t13.m = av(t13.growth), t13.s = s(t13.growth)) %>%
-#         mutate_each(funs(round(.,2)), -Subject) %>%
-#         select(-ends_with(".s"), -t13.m, -t23.m, -t3.m) %>%
-#         transmute(Subject, CriMean.t1 = t1.m, CriMean.t2 = t2.m, Improvement.t12 = t12.m)
-
+av <- function(x) {mean(x, na.rm = TRUE)}
+s <- function(x) {sd(x, na.rm = TRUE)}
 
 by_subject <- year.report %>%
         group_by(Subject) %>%
@@ -234,6 +217,7 @@ by_subject <- year.report %>%
         mutate(centralized_improvement = Imp.m - mean(Imp.m)) %>%
         mutate_each(funs(round(.,2)), -Subject) %>%
         ungroup()
+
 datatable(by_subject, caption = "T1-T2 Average Criteria Levels by Subject*",
           class = 'compact', options = list(pageLength = 12, dom = 't'),
           rownames = FALSE)
@@ -254,7 +238,8 @@ I think the be
 year.report <- GetYearReport() %>%
         select(Student.ID, Class.ID:Teacher, CriMean.t1, CriMean.t2, t12.growth) %>%
         group_by(Class.ID) %>%
-        mutate(Student.ID = "1000****", t12.growth.centered = round(t12.growth - av(t12.growth), digits = 2)) %>%
+        mutate(Student.ID = "1000****",
+               t12.growth.centered = round(t12.growth - av(t12.growth), 22)) %>%
         ungroup() %>%
         select( -Class.ID) %>%
         sample_n(100)
@@ -296,23 +281,50 @@ A breakdown of the comments from trimester 1. Number of
 
 Let's start by getting the top 10 words that 
 
-```{r top 10, warning = FALSE}
+```{r top words, warning = FALSE}
 
-t1.top10 <- GetReportsDFfromMBcsv("data/t1 comments.csv") %>%
-        GetCorpusFromReportDF() %>% 
+t1.corpus <- GetReportsDFfromMBcsv("data/t1 comments.csv") %>%
+        AnonymizeReport() %>%
+        GetCorpusFromReportDF()
+
+t1.top10 <- t1.corpus %>%
         DocumentTermMatrix() %>%
         CollapseAndSortDTM() %>%
         head(10) %>%
         select(Words, freq) %>%
-        mutate( per.1000 = 1000 * freq / 72921)
+        mutate( per.1000 = round(1000 * freq / 72921,2))
 
-kable(t1.top10, col.names = c("Words, Frequency", "Freq per 1000 words"),
+kable(t1.top10, col.names = c("Words", "Frequency", "(per 1000 words)"),
       caption = "T1 Comments: Top 10 Most Word Used Words")
 ```
 
 <br><br>
 
-Wow, how insightful! The
+Wow, how insightful! (not).     Let's look instead at n-grams (i.e. phrases). 
+
+```{r top phrases, warning = FALSE}
+
+t1.top1000 <- t1.corpus %>% 
+        GetDocumentTermMatrix(4,8, FALSE) %>%
+        CollapseAndSortDTM() %>%
+        mutate(length = CountWords(Words)) %>%
+        mutate(LenNorm = length * freq) %>%
+        arrange(desc(LenNorm)) %>%
+        head(1000)
+
+t1.pruned <- GetPrunedList(t1.top1000, 100)
+        
+
+kable(t1.pruned , col.names = c("Phrases", "FrequencyXLength"),
+      caption = "T1 Comments: Top 10 Most Word Used Phrases -- weighted by length")
+
+```
+
+<br><br>
+
+Now we are getting somewhere! These are the phrases that were most used
+
+What I want to do now is look at the language used to describe
 
 ***
 #Findings
