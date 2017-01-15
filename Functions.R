@@ -49,15 +49,15 @@ AnonymizeReport <- function(report) {
                 #scrub ____ from comment w/ regex:
                 mutate(Comment.Clean = 
                                #1) Legal Name
-                               str_replace_all(Student.Comment, Legal.Name, "@@@") %>%
+                               str_replace_all(Student.Comment, Legal.Name, "xxx") %>%
                                #2) Last Name        
-                               str_replace_all(RegexName(Last.Name), "@@@") %>%
+                               str_replace_all(RegexName(Last.Name), "xxx") %>%
                                #3) Unpunctuated name
-                               str_replace_all(Unpunct.Name, "@@@"),
+                               str_replace_all(Unpunct.Name, "xxx"),
                        
                        #tests for broken comments
                        nickname = str_detect(Comment.Clean, regex.parenth),
-                       missed = !str_detect(Comment.Clean, "@@@")) %>%
+                       missed = !str_detect(Comment.Clean, "xxx")) %>%
                 
                 #restructure to match input's columns i.e. drop added columns
                 select(Student.ID:CriMean, Student.Comment = Comment.Clean)
