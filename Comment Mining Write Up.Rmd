@@ -85,15 +85,12 @@ library(tm)
 library(dplyr)
 library(tidyr)
 library(RWeka)
-library(lubridate)
-library(ggplot2)
 library(DT)
 library(knitr)
 
 
-#set wd and paths and source functions
+#source custom-built functions
 source("Functions.R")
-source("MB - t12 growth.R")
 ```
 
 Now I'll load the csv file I got by exporting term grades from ManageBac
@@ -278,7 +275,7 @@ A breakdown of the comments from trimester 1. Number of
 * Words: 72,921
 
 
-Let's start by getting the top 10 words that 
+Let's start by getting the top 10 words that were used in trimester one comments.
 
 ```{r top words, warning = FALSE}
 
@@ -302,7 +299,7 @@ kable(t1.top10, col.names = c("Words", "Frequency", "(per 1000 words)"),
 
 <br><br>
 
-Wow, how insightful! (not).     Let's look instead at n-grams (i.e. phrases). 
+Wow, how insightful! (not).     Let's look instead at n-grams (i.e. phrases).
 
 ```{r top phrases, warning = FALSE}
 
@@ -337,9 +334,13 @@ What I want to do now is look at compare two groups and the language used to des
 * Top 25% in terms of improvement, and
 * Bottom 25% in terms of improvement.
 
+To do this I will use the term-frequency/inverse-document frequency metric (tf-idf) which I discovered from an article published on Nate Silver's FiveThirtyEight blog titled, [These Are The Phrases Each GOP Candidate Repeats Most](https://fivethirtyeight.com/features/these-are-the-phrases-each-gop-candidate-repeats-most/) by [@MiloBeckman2016]. In it, Beckmana analyzes 2016 GOP debate transcripts to find unique phrases for each candidate.
+
+In this analysis, I am employ tf-idf to find phrases that are more likely to have been used to describe students that improved than those that didn't.
+
 ##Putting it All Together
 
-```{r top & bottom lists}
+```{r top & bottom}
 
 
 year.report <- year.report %>%
@@ -357,35 +358,39 @@ year.report <- year.report %>%
 quarts <- c(1,2,3,4)
 quartiles <- lapply(quarts, function(x) {
         year.report %>% filter(t12.growth.center.quartile == x) %>%
-                .$ID.SUB
-})
+                .$ID.SUB})
 
 #paste each quartile's comments into one comment
 quartile.comments <- lapply(quartiles, function(x) {
         idx <- t1.corpus %>% meta(tag = "ID.SUB") %in% x
-        do.call(paste,content(t1.corpus[idx]))
-})
+        do.call(paste,content(t1.corpus[idx])) })
 
+#take only Q1 and Q4
 topbot.comments <- quartile.comments[-c(2,3)]
 
 #make corpus (1 quartile = 1 document)
 topbot.corpus <- VectorSource(topbot.comments) %>% Corpus
+```
 
-#make dtc from corpus
-all.tfidf <- GetAllTfIdfMatricesFromCorpus(topbot.corpus, 2,6, norm = TRUE)
+```{r}
+#make dtc from corpus with phrases 2- to 6-words long
+all.tfidf <- GetAllTfIdfMatricesFromCorpus(topbot.corpus, 2,5, norm = TRUE)
 
-all.pruned <- lapply(all.tfidf, GetPrunedList, prune_thru = 200)
+#remove repetitive words
+all.pruned <- lapply(all.tfidf, GetPrunedList, prune_thru = 300)
 
 top <- all.pruned[[1]] %>%
   transmute(ngrams, Score = tfidfXlength * 100000) %>%
-  filter(Score >= 16)
+  filter(Score >= 20)
  
 bottom <- all.pruned[[2]]  %>%
   transmute(ngrams, Score = tfidfXlength * 100000) %>%
-  filter(Score >= 16)
+  filter(Score >= 20)
 ```
 
-```{r top & bottom - table echo = FALSE}
+
+
+```{r top & bottom - table, echo = FALSE}
 kable(top, caption = "Top 25% Improved: Most Common Phrases from T1")
 kable(bottom, caption = "Bottom 25% Improved: Most Common Phrases from T1")
 ```
@@ -396,7 +401,6 @@ kable(bottom, caption = "Bottom 25% Improved: Most Common Phrases from T1")
 
 <br><br>
 
-This is what I found  
 
 ***
 #Evaluation
