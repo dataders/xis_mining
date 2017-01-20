@@ -13,6 +13,17 @@ bibliography: library.bib
 knitr::opts_chunk$set(echo = TRUE)
 ```
 # Background
+
+
+I just finished four years teaching math at Xiamen International School: a private, International Baccalaureate K12 school teaching middle and high school in Fujian Province, China.
+
+In addition to reporting achievement levels according to criterion-based rubrics for each student, we also had to write three sentences about how the student and their progress in class.
+
+For a variety of reasons I'll mention below, I struggled to get my comments finished. That combined with the fact that [I overthink things](https://pics.onsizzle.com/hmmm-yeah-i-think-so-did-i-this-is-helping-2789638.png) led me down a rabbit hole of trying to eke out the value of comments.
+
+So here goes nothing.
+
+
 ### Research Question
 
 #### Ideal question
@@ -28,21 +39,10 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ##### 1. Seek out what an "effective" comment is. 
 
-Full disclosure:
-
-* I struggle writing comments.  
-* [I think WAY too much](https://pics.onsizzle.com/hmmm-yeah-i-think-so-did-i-this-is-helping-2789638.png). 
-
-I just finished four years at Xiamen International School: a private, MYP K-12 school with three "grading" periods a year. At the end of every trimester the system teachers reported student's achievement against the MYP subject-specific criteria rubrics (e.g. in Mathematics: A: Knowing and Understanding, B: Investigating Patterns, C: Communicating, D: Applying Math in Real-Life) that were used that trimester. Each rubric has eight different achievement levels, from one to eight.
-
-In addition to criterion-based reporting, teachers wrote a three-sentence narrative comment about the students achievement in this format:  
-1. An area in which the student did well  
-2. An area in which the student could improve  
-3. A recommendation as to how the student could improve in the above area.  
 
 The difficulty with comments is that it takes a long time to write these comments and by the time there are in parents' hands it may be too late for it to be considered effective feedback. Additionally, a minority of our parents speak English as a first language. These reasons and others made diving into the value of a comment very alluring to me.
 
- > The problem with our report cards is that grades and comments are always encoded and not standard-referenced ... The report card should, above all else, be user-friendly: Parents must be able to easily understand the information it contains.-- *Grant Wiggins* [@Wiggins1994]
+ > The problem with our report cards is that grades and comments are always encoded and not standard-referenced ... The report card should, above all else, be user-friendly: Parents [and students] must be able to easily understand the information it contains.-- *Grant Wiggins* [@Wiggins1994]
 
 ##### 2. Enhance Creativity of Teachers  
 I love the conversations I've had in workshops concerning "data-driven" teaching and learning as well as the idea of action research. However, the majority of tools for educational data analysis (MAP, SAT, Atlas Rubicon) tend not to give actionable suggestions to teachers as to how to improve their practice. I want to use real data to give practice-based recommendations for helping students learn and improve.
@@ -73,13 +73,15 @@ I've started and stopped this project three times now over the course of a year.
 
 <br><br>
 
+This analysis will be conducted on trimester reports for XIS's Middle Years Program (MYP) students. The MYP program runs from grade six through grade ten and each student takes eight classes.
+
 ## Set Up and EDA
 
 <br><br>
 
 First I'll start by loading all the extra packages I used for my analysis.
 
-```{r libraries & source, message = FALSE}
+```{r libraries & source, warning = FALSE, message = FALSE}
 #load required libraries, data, and created functions
 library(tm)
 library(dplyr)
@@ -93,8 +95,8 @@ library(knitr)
 source("Functions.R")
 ```
 
-Now I'll load the csv file I got by exporting term grades from ManageBac
-```{r t1.report, , warning = FALSE}
+Now I'll load the csv file of term grades I exported from ManageBac.
+```{r t1.report - stats, warning = FALSE}
  t1.report <- GetReportsDFfromMBcsv("data/t1 comments.csv")
 
 #find dimensions (rows & columns) of the table
@@ -104,9 +106,9 @@ dim(t1.report)
 colnames(t1.report)
 ```
 
-So this table has 14 columns 1066 rows, where each row is one student's report for one class.
+So this table has 14 columns 1066 rows, where each row is one student's report for one class. Now to show you more what the data looks like, I've randomly selected 100 class reports with indentifying information removed (i.e. Name, Student ID, and comment).
 
-```{r sample table, warning = FALSE}
+```{r t1 report - anonymize, warning = FALSE}
 
 #get an example table
 t1.report.ex <- t1.report %>%
@@ -116,26 +118,27 @@ t1.report.ex <- t1.report %>%
         select(Student.ID, Grade.Level:Cri.D, CriMean, -First.Name, -Last.Name) %>%
         #take 100 rows at random
         sample_n(100)
+```
 
+```{r t1 report - table, echo = FALSE}
 datatable(t1.report.ex, rownames = FALSE, class = 'compact')
-
 ```
 
 <br><br>
 
-The above table shows a random sample of 100 reports. At XIS it isn't requried that all four criteria be assessed each trimester so mean criteria score was calculated based on what was available.
+At XIS it isn't required that all four criteria be assessed each trimester so mean criteria score was calculated based on what was available.
 
 ***
 ## Measuring Improvement
 
 <br><br>
 
-Before we get to measuring how much a student improves from trimester one to two, Lets start with an definition then an example.
+Before we get to measuring how much a student improves from trimester one to two, lets start with an definition then an example.
 
 ### Definition
-> **Improvement** -- the class-centered increase of mean critera levels from trimester one to trimester two. 
+> **Improvement** -- the class-centered increase of mean criteria levels from trimester one to trimester two. 
 
-Normalized in this case signifies that the mean improvement for for each class has been subtracted from the improvement each student received in said class.
+"centered" in this case signifies that the mean improvement for for each class has been subtracted from the improvement each student received in said class.
 
 
 ### Example Methodology
@@ -150,20 +153,23 @@ $$
 
 ```{r norm.ex 1, echo = FALSE}
 norm.ex <- read.csv("examples/normed_improvement_rationale.csv")
+```
+
+```{r norm.ex 1 table, echo = FALSE}
 datatable(norm.ex, caption = "Example Class T1-T2 Results", rownames = FALSE, options = list(dom = 't'))
 ```
 
 <br><br>
 
-We assume that if a student's levels went up from trimester one to trimester two then they improved in that class. However in the above example, who improved more: Denise or Emily? Due to large variation in criteria levels between teachers and classes, this is something that needs adressing[^1].
+We assume that if a student's levels went up from trimester one to trimester two then they improved in that class. However in the above example, who improved more: Denise or Emily? Due to large variation in criteria levels between teachers and classes, this is something that needs addressing[^1].
 
 
- To account for this difference I decided to **normalize improvement against the the class they were in[^2]** . The improvement metric is modified by subtracting the mean improvement of each class. That is to say, the mean for each individual class is computed then each individuals improvement is scaled according to the average improvement of the  class. Accordingly, the mean and SD of Ms. Green and Ms. Blue's class is:
+ To account for this difference I decided to **centralize improvement to control for the effects of the teacher[^2]** . The improvement metric is modified by subtracting the mean improvement of each class. That is to say, the mean for each individual class is computed then each individuals improvement is scaled according to the average improvement of the  class. Accordingly, the meanof Ms. Green and Ms. Blue's class is:
  
 ```{r norm.ex2}
 by_teacher <- norm.ex %>%
         group_by(Teacher) %>%
-        summarize(Improve.m = mean(Improvement), Improve.sd = sd(Improvement))
+        summarize(Improve.m = mean(Improvement))
 ```
 
 ```{r norm.ex2 - table, echo = FALSE}
@@ -181,10 +187,12 @@ So using the above formula we get the following column displaying our new improv
 ```{r norm.ex 3}
 norm.ex.by_teacher <- left_join(norm.ex, by_teacher, by = "Teacher") %>%
         #normalize the t12.growth by mean & sd of teacher t12.growth
-        mutate(Improve.zgrowth = (Improvement - Improve.m)/Improve.sd) %>%
+        mutate(Improve.centered = (Improvement - Improve.m)) %>%
         mutate_each(funs(round(.,3)), -Student, -Teacher) %>%
-        select(Student, Teacher, Improvement:Improve.zgrowth)
-        
+        select(Student, Teacher, Improvement:Improve.centered)
+```
+
+```{r norm.ex 3 - table, echo = FALSE}
 datatable(norm.ex.by_teacher, rownames = FALSE, options = list(dom = 't'))
 ```
 
@@ -207,7 +215,7 @@ by_subject <- year.report %>%
         group_by(Subject) %>%
         summarize(CriMean.t1 = av(CriMean.t1), CriMean.t2 = av(CriMean.t2),
                   Imp.m = av(t12.growth), Imp.sd = s(t12.growth)) %>%
-        mutate(centralized_improvement = Imp.m - mean(Imp.m)) %>%
+        mutate(Improvement.centered = Imp.m - mean(Imp.m)) %>%
         mutate_each(funs(round(.,2)), -Subject) %>%
         ungroup()
 
@@ -218,15 +226,11 @@ datatable(by_subject, caption = "T1-T2 Average Criteria Levels by Subject*",
 
 <br><br>
 
-We can see from the table that the average criteria improvement varies amongst the subjects. This holds true for grade levels, teachers and individual classes.
+We can see from the table that the average criteria improvement varies among the subjects. This holds true for grade levels, teachers and individual classes.
 
 I think the be
 
-```{r t12.report - class variation, echo = FALSE, warning = FALSE}
-
-# wrapper
-
-
+```{r t12.report - class variation, warning = FALSE}
 #combine all three trimesters of data together
 year.report <- GetYearReport() %>%
         select(Student.ID, Class.ID:Teacher, CriMean.t1, CriMean.t2, t12.growth) %>%
@@ -240,8 +244,9 @@ year.report.anon <- year.report %>%
         select( -Class.ID) %>%
         sample_n(100) %>%
         mutate(Student.ID = "1000****")
-        
-        
+```
+
+```{r t12.report - class variation - table, echo = FALSE}
 datatable(year.report.anon, caption = "Centralized Improvement Metric",
           class = 'compact', rownames = FALSE)
 ```
@@ -269,7 +274,7 @@ A typical comment reads like this:
 
 As teachers, when we write these comments, we hope that the student and his/her parents reads the comment, assimilate the feedback and improve. We have no way to know for sure that this happens. But I set out to learn more...
 
-A breakdown of the comments from trimester 1. Number of
+A breakdown of the comments from trimester one. In total for trimester one there were:
 * Students: 133
 * Reports: 1066
 * Words: 72,921
@@ -334,7 +339,7 @@ What I want to do now is look at compare two groups and the language used to des
 * Top 25% in terms of improvement, and
 * Bottom 25% in terms of improvement.
 
-To do this I will use the term-frequency/inverse-document frequency metric (tf-idf) which I discovered from an article published on Nate Silver's FiveThirtyEight blog titled, [These Are The Phrases Each GOP Candidate Repeats Most](https://fivethirtyeight.com/features/these-are-the-phrases-each-gop-candidate-repeats-most/) by [@MiloBeckman2016]. In it, Beckmana analyzes 2016 GOP debate transcripts to find unique phrases for each candidate.
+To do this I will use the term-frequency/inverse-document frequency metric (tf-idf) which I discovered from an article published on Nate Silver's FiveThirtyEight blog titled, [These Are The Phrases Each GOP Candidate Repeats Most](https://fivethirtyeight.com/features/these-are-the-phrases-each-gop-candidate-repeats-most/) by [@MiloBeckman2016]. In it, Beckman analyzes 2016 GOP debate transcripts to find unique phrases for each candidate.
 
 In this analysis, I am employ tf-idf to find phrases that are more likely to have been used to describe students that improved than those that didn't.
 
@@ -372,9 +377,9 @@ topbot.comments <- quartile.comments[-c(2,3)]
 topbot.corpus <- VectorSource(topbot.comments) %>% Corpus
 ```
 
-```{r}
+```{r top & bottom - corpus}
 #make dtc from corpus with phrases 2- to 6-words long
-all.tfidf <- GetAllTfIdfMatricesFromCorpus(topbot.corpus, 2,5, norm = TRUE)
+all.tfidf <- GetAllTfIdfMatricesFromCorpus(topbot.corpus, 2,4, norm = TRUE)
 
 #remove repetitive words
 all.pruned <- lapply(all.tfidf, GetPrunedList, prune_thru = 300)
@@ -401,6 +406,19 @@ kable(bottom, caption = "Bottom 25% Improved: Most Common Phrases from T1")
 
 <br><br>
 
+My first conlcusion is that there is a lot of similarities between the most unique phrases describing the top 25% and bottom 25% of improvers. There are no real standout phrases that would key anyone into the idea that this student might improve in the future. That makes sense, there are certainly a lot of other factors that go into whether a student improves or not.
+
+If you were to read 100 comments, you would start to see a lot of similarity in the comments. The similarity however is primarily semantic (ideas) and not syntactic (grammar and word choice). The methodology I employed is not capable of finding similarities in this way only literal similarity. Thus, it is more likely that we see phrases repeated by one teacher about different students. This is the case with "more and more comfortable sharing", a phrase one teacher used sixteen times. The same goes for "as the year has progressed" (17 times). However, "and I look forward to" used by three different teachers in nine different reports.
+
+More than anything, this table doesn't conclusively answer my research question at all. Instead I have more questions than when I started.
+
+One phrase worthy of note from the bottom 25% is "achievement in all tasks". A search of the comments reveals more context, "xxx needs more consistent achievement in all tasks". This suggests that inconsistent performance might not often lead to impovement in the coming grading period.
+
+That being said, a phrases stood out to me as teacher euphemisms. For example I get the feeling that "more and more comfortable sharing" really means "your son/daughter is shy but working on it."
+
+In the top 25% table "a focus for the next" falls under the category of something just one teacher said frequently. However, the context for "class discussions as" comes from two teachers who say that despite the students polite nature and high achievement that "I would like to see her partcipate more in class discussions as she has a lot to offer". The high frequency of the use of this phrase to describe high achieving students almost suggests an inverse proportional relationship between achievement and class particiaption.  
+
+From the top performing tables the phrase
 
 ***
 #Evaluation
