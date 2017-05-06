@@ -1,0 +1,8 @@
+name: Publish Document
+title:
+account: rpubs
+server: rpubs.com
+appId: https://api.rpubs.com/api/v1/document/240500/3dd74d0e4cec4bdaab927483d1c89988
+bundleId: https://api.rpubs.com/api/v1/document/240500/3dd74d0e4cec4bdaab927483d1c89988
+url: http://rpubs.com/data_ders/240500
+when: 1484625793.61984

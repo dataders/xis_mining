@@ -1,0 +1,164 @@
+---
+title: "Comment Mining Write Up"
+author: "Anders Swanson"
+output: html_document
+bibliography: library.bib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+### **Research Question**  
+
+#### Ideal question
+> What effect do teacher-written trimester comments have on future student performance?*
+
+#### Realistic question
+> How does the language used to describe students in trimester one comments vary depending on level of improvement in trimester two?
+
+### **Purpose**  
+
+##### 1. Seek out what an "effective" comment is.  
+Full disclosure:  
+* I strongly dislike writing comments.  
+* I think WAY too much.  
+
+I just finished four years at Xiamen International School: a private, MYP K-12 school with three "grading" periods a year. At the end of every trimester the system teachers reported student's achievement against the MYP subject-specific criteria rubrics (e.g. in Mathematics: A: Knowing and Understanding, B: Investigating Patterns, C: Communicating, D: Applying Math in Real-Life) that were used that trimester.
+
+In addition to criterion-based reporting, teachers wrote a three-sentence narrative comment about the students achievement in this format:  
+1. An area in which the student did well  
+2. An area in which the student could improve  
+3. A recommendation as to how the student could improve in the above area.  
+
+
+ > The report card should, above all else, be user-friendly: Parents must be able to easily understand the information it contains. --*Grant Wiggins* [@Wiggins1994]
+
+##### 2. Enhance Creativity of Teachers  
+I love the conversations I've heard in workshops concerning "data-driven" learning and action research. However, the majority of tools for educational data analysis (MAP, SAT, Atlas Rubicon) the intended audience is really the administrators. I want to focus on practice-based recommendations for helping teachers teach.
+
+##### 3. Learn R
+I started this project having only competed the first few courses of the Johns Hopkins Data Science specialization series on Coursera. I knew basics of R but I hoped to become more fluent as I went. I've definitely learned a lot and moved beyond the syntax to understand more about R, especially packages like tm, dplyr, and ggplot2.
+
+
+***
+### **Principles**  
+##### 1. Share results with community  
+
+This article is a start. [Full GitHub repository is here](https://github.com/swanderz/xis_mining)
+
+##### 2. Produce reliable, readable, commented code  
+
+This is something I've I'd love to share the data set but it contains and scrubbing all names from comments is something beyond my difficultly level currently. 
+
+"data can either be useful or perfectly anonymous but never both."
+
+##### 3. Be as objective as possible  
+I started this project having only competed the first few courses of the Johns Hopkins Data Science specialization series on Coursera. I knew basics of R but I hoped to become more fluent as I went.  
+
+##### 4. Strive for "good enough"  
+I've started and stopped this project three times now over the course of a year. I've branched off and explored MANY different aspects of this dataset but in the end the story is original
+
+
+### EDA - Exploratory Data Analysis  
+
+First I'll start by loading all the extra packages I used for my analysis.
+
+```{r libraries & source, message = FALSE}
+#load required libraries, data, and created functions
+library(tm)
+library(dplyr)
+library(tidyr)
+library(RWeka)
+library(xlsx)
+library(lubridate)
+library(ggplot2)
+library(stringr)
+library(devtools)
+library(knitr)
+library(pander)
+
+
+#set wd and paths and source functions
+setwd("/Users/andersswanson/Desktop/comment\ mining")
+opts_knit$set(root.dir = "/Users/andersswanson/Desktop/comment\ mining")
+source("Functions.R")
+source("MB - t12 growth.R")
+```
+
+Then I'll load the csv file I got by exporting term grades from ManageBac
+```{r t1.report, , warning = FALSE}
+ t1.report <- GetReportsDFfromMBcsv("data/t1 comments.csv")
+
+#find dimensions (rows & columns) of the table
+dim(t1.report)
+
+#get column names
+colnames(t1.report)
+```
+
+So this table has 14 columns 1066 rows, where each row is one student's report for one class
+
+```{r sample table, warning = FALSE}
+
+#get an example table
+t1.report.ex <- t1.report %>%
+        #drop student comment column
+        select(-Student.Comment) %>%
+        #take 8 rows at random
+        sample_n(8)
+#anonymize personal identifiers
+t1.report.ex$Student.ID <- "1000****"
+t1.report.ex$First.Name <- "****"
+t1.report.ex$Last.Name <- "****"
+kable(t1.report.ex, digits = 2)
+
+
+```
+
+The above table shows eight randomly selected reports. Since at XIS it isn't requried that all four criteria be assessed each trimester it is necessary to create a performance metric for each student based on available evidence. Mean criteria score seemed to me to be most helful. From this it would seem that a simple subtraction like this would suffice:
+
+> ${\text{Improvement}_{\text{T1-T2}}} = {\text{CriMean}}_{\text{T2}}-{\text{CriMean}}_{\text{T1}}$.
+
+Would that it were so simple! We assume that if a student's levels went up from trimester one to trimester two then they improved in that class. However the following example highlights the difficulty of the assumption.
+
+```{r norm.ex, echo = FALSE}
+norm.ex <- read.csv("examples/normed_improvement_rationale.csv")
+kable(norm.ex, align = "l", caption = "Example Class T1-T2 Results")
+```
+
+Who improved more: Denise or Emily? I saw this phenomenon happen and decided that it warranted further investigation. 
+
+```{r subject.variation, echo = FALSE, warning = FALSE}
+#combine all three trimesters of data together
+year.report <- GetYearReport()
+
+#wrappers for mean and sd with na.rm = TRUE
+av <- function(x) {
+        mean(x, na.rm = TRUE)
+}
+s <- function(x) {
+        sd(x, na.rm = TRUE)
+}
+
+by_subject <- year.report %>%
+        group_by(Subject) %>%
+        summarize(t1.m = av(CriMean.t1), t1.s = s(CriMean.t1),
+                  t2.m = av(CriMean.t2), t2.s = s(CriMean.t2),
+                  t3.m = av(CriMean.t3), t3.s = s(CriMean.t3),
+                  t12.m = av(t12.growth), t12.s = s(t12.growth),
+                  t23.m = av(t23.growth), t23.s = s(t23.growth),
+                  t13.m = av(t13.growth), t13.s = s(t13.growth)) %>%
+        mutate_each(funs(round(.,2)), -Subject) %>%
+        select(-ends_with(".s"), -t13.m, -t23.m, -t3.m) %>%
+        transmute(Subject, CriMean.t1 = t1.m, CriMean.t2 = t2.m, Improvement.t12 = t12.m)
+kable(by_subject)
+```
+
+Note The average growth should be the difference between the Criteria Means of trimester one and two but the average growth excludes mid-year students who: 1) typically don't do well in their 1st trimester of MYP and 2) are not represented in the T1-T2 growth statistic.
+
+```{r}
+
+```
+
+
+# References  

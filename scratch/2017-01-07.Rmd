@@ -1,0 +1,22 @@
+---
+title: "scratch"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+${watch}_{\text{this}}$
+${watch}_{yo}_{jet}$
+
+${Improvement_{\text{T1-T2}}}$
+${CriMean}_{\text{T2}} - {CriMean_{\text{T1}}$
+
+${\text{Improvement}_{\text{T1-T2}}} = {\text{CriMean}}_{\text{T2}}-{\text{CriMean}}_{\text{T1}}$
+
+```{r}
+norm.ex <- read.csv("examples/normed_improvement_rationale.csv")
+```
+

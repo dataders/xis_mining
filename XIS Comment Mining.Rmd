@@ -1,0 +1,415 @@
+---
+title: "Comment Mining Write Up"
+author: "Anders Swanson"
+output:
+  html_document:
+    depth: 4
+    toc: yes
+    theme: spacelab
+bibliography: library.bib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+# Background
+### Research Question
+
+#### Ideal question
+> What effect do teacher-written trimester comments have on future student performance?
+
+#### Realistic question
+> How does the language used to describe students in trimester one comments vary depending on level of improvement in trimester two?
+
+***
+### Purpose  
+
+<br><br>
+
+##### 1. Seek out what an "effective" comment is. 
+
+Full disclosure:
+
+* I struggle writing comments.  
+* [I think WAY too much](https://pics.onsizzle.com/hmmm-yeah-i-think-so-did-i-this-is-helping-2789638.png). 
+
+I just finished four years at Xiamen International School: a private, MYP K-12 school with three "grading" periods a year. At the end of every trimester the system teachers reported student's achievement against the MYP subject-specific criteria rubrics (e.g. in Mathematics: A: Knowing and Understanding, B: Investigating Patterns, C: Communicating, D: Applying Math in Real-Life) that were used that trimester. Each rubric has eight different achievement levels, from one to eight.
+
+In addition to criterion-based reporting, teachers wrote a three-sentence narrative comment about the students achievement in this format:  
+1. An area in which the student did well  
+2. An area in which the student could improve  
+3. A recommendation as to how the student could improve in the above area.  
+
+The difficulty with comments is that it takes a long time to write these comments and by the time there are in parents' hands it may be too late for it to be considered effective feedback. Additionally, a minority of our parents speak English as a first language. These reasons and others  
+
+ > The problem with our report cards is that grades and comments are always encoded and not standard-referenced. --*Grant Wiggins* [@Wiggins1994]
+
+##### 2. Enhance Creativity of Teachers  
+I love the conversations I've heard in workshops concerning "data-driven" learning and action research. However, the majority of tools for educational data analysis (MAP, SAT, Atlas Rubicon) tend not to give actionable suggestions to teachers as to how to improve their practice. I want to focus on practice-based recommendations for helping students learn and improve
+
+##### 3. Learn R
+I started this project having only competed the first few courses of the Johns Hopkins Data Science specialization series on Coursera. I knew basics of R but I hoped to become more fluent as I went. I've definitely learned a lot and moved beyond the syntax to understand more about R, especially packages like tm, dplyr, knitr, and ggplot2.
+
+
+***
+### Principles
+
+<br><br>
+
+##### 1. Share results with community  
+
+This article is a start. [Full GitHub repository is here](https://github.com/swanderz/xis_mining)
+
+##### 2. Produce reliable, readable, commented code  
+
+This is something I've I'd love to share the data set but it contains and scrubbing all names from comments is something beyond my difficultly level currently. 
+
+"data can either be useful or perfectly anonymous but never both."
+
+##### 3. Be as objective as possible  
+I started this project having only competed the first few courses of the Johns Hopkins Data Science specialization series on Coursera. I knew basics of R but I hoped to become more fluent as I went.  
+
+##### 4. Strive for "good enough"  
+I've started and stopped this project three times now over the course of a year. I've branched off and explored MANY different aspects of this dataset but in the end the story I'm telling now is the one I set out at the beginning to answer.
+
+***
+# Analysis
+
+<br><br>
+
+## Set Up and EDA
+
+<br><br>
+
+First I'll start by loading all the extra packages I used for my analysis.
+
+```{r libraries & source, message = FALSE}
+#load required libraries, data, and created functions
+library(tm)
+library(dplyr)
+library(tidyr)
+library(RWeka)
+library(lubridate)
+library(ggplot2)
+library(DT)
+library(knitr)
+
+
+#set wd and paths and source functions
+setwd("/Users/andersswanson/Desktop/comment\ mining")
+source("Functions.R")
+source("MB - t12 growth.R")
+```
+
+Now I'll load the csv file I got by exporting term grades from ManageBac
+```{r t1.report, , warning = FALSE}
+ t1.report <- GetReportsDFfromMBcsv("data/t1 comments.csv")
+
+#find dimensions (rows & columns) of the table
+dim(t1.report)
+
+#get column names
+colnames(t1.report)
+```
+
+So this table has 14 columns 1066 rows, where each row is one student's report for one class.
+
+```{r sample table, warning = FALSE}
+
+#get an example table
+t1.report.ex <- t1.report %>%
+        #salt student IDs, round CriMean, 
+        mutate(Student.ID = "1000****", CriMean = round(CriMean, digits = 3)) %>%
+        #select only what I want
+        select(Student.ID, Grade.Level:Cri.D, CriMean, -First.Name, -Last.Name) %>%
+        #take 100 rows at random
+        sample_n(100)
+
+datatable(t1.report.ex, rownames = FALSE, class = 'compact')
+
+```
+
+<br><br>
+
+The above table shows a random sample of 100 reports. At XIS it isn't requried that all four criteria be assessed each trimester so mean criteria score was calculated based on what was available.
+
+***
+## The "Improvement" Metric
+
+<br><br>
+
+Before we get to measuring how much a student improves from trimester one to two, Lets start with an definition then an example.
+
+### Definition
+> **Improvement** -- the class-centered increase of mean critera levels from trimester one to trimester two. 
+
+Normalized in this case signifies that the mean improvement for for each class has been subtracted from the improvement each student received in said class.
+
+
+### Example Methodology
+
+
+Let's use an example school with two classes of four students each taught by Ms. Blue and Ms. Green.
+
+Generally, Improvement in this instance is calculated as:
+$$
+{\text{Improvement}_{\text{T1-T2}}} = {\text{CriMean}}_{\text{T2}}-{\text{CriMean}}_{\text{T1}}
+$$
+
+```{r norm.ex 1, echo = FALSE}
+norm.ex <- read.csv("examples/normed_improvement_rationale.csv")
+datatable(norm.ex, caption = "Example Class T1-T2 Results", rownames = FALSE, options = list(dom = 't'))
+```
+
+<br><br>
+
+We assume that if a student's levels went up from trimester one to trimester two then they improved in that class. However in the above example, who improved more: Denise or Emily? Due to large variation in criteria levels between teachers and classes, this is something that needs adressing[^1].
+
+
+ To account for this difference I decided to **normalize improvement against the the class they were in[^2]** . The improvement metric is modified by subtracting the mean improvement of each class. That is to say, the mean for each individual class is computed then each individuals improvement is scaled according to the average improvement of the  class. Accordingly, the mean and SD of Ms. Green and Ms. Blue's class is:
+ 
+```{r norm.ex2}
+by_teacher <- norm.ex %>%
+        group_by(Teacher) %>%
+        summarize(Improve.m = mean(Improvement), Improve.sd = sd(Improvement))
+```
+
+```{r norm.ex2 - table, echo = FALSE}
+kable(by_teacher)
+```
+
+<br><br>
+
+The formula for our improvement adjustment.
+ $$
+  {CenteredImprovement}_{student} = {Improvement}_{student} - {Improvement}_{classmean}
+ $$
+So using the above formula we get the following column displaying our new improvement metric. Its worth noting that a negative centered improvement score does not necessarily mean that the student's performance decreased, but that they increased less than the average of the class.
+
+```{r norm.ex 3}
+norm.ex.by_teacher <- left_join(norm.ex, by_teacher, by = "Teacher") %>%
+        #normalize the t12.growth by mean & sd of teacher t12.growth
+        mutate(Improve.zgrowth = (Improvement - Improve.m)/Improve.sd) %>%
+        mutate_each(funs(round(.,3)), -Student, -Teacher) %>%
+        select(Student, Teacher, Improvement:Improve.zgrowth)
+        
+datatable(norm.ex.by_teacher, rownames = FALSE, options = list(dom = 't'))
+```
+
+<br><br>
+
+## XIS's Improvement
+
+So now to the XIS data, below is a table showing the average criteria levels for each subject in the MYP for both trimester one and two as well as the difference[^3] between them.
+
+
+```{r subject.variation, warning = FALSE}
+#combine all three trimesters of data together
+year.report <- GetYearReport()
+
+#wrappers for mean and sd with na.rm = TRUE
+av <- function(x) {mean(x, na.rm = TRUE)}
+s <- function(x) {sd(x, na.rm = TRUE)}
+
+by_subject <- year.report %>%
+        group_by(Subject) %>%
+        summarize(CriMean.t1 = av(CriMean.t1), CriMean.t2 = av(CriMean.t2),
+                  Imp.m = av(t12.growth), Imp.sd = s(t12.growth)) %>%
+        mutate(centralized_improvement = Imp.m - mean(Imp.m)) %>%
+        mutate_each(funs(round(.,2)), -Subject) %>%
+        ungroup()
+
+datatable(by_subject, caption = "T1-T2 Average Criteria Levels by Subject*",
+          class = 'compact', options = list(pageLength = 12, dom = 't'),
+          rownames = FALSE)
+```
+
+<br><br>
+
+We can see from the table that the average criteria improvement varies amongst the subjects. This holds true for grade levels, teachers and individual classes.
+
+I think the be
+
+```{r t12.report - class variation, echo = FALSE, warning = FALSE}
+
+# wrapper
+
+
+#combine all three trimesters of data together
+year.report <- GetYearReport() %>%
+        select(Student.ID, Class.ID:Teacher, CriMean.t1, CriMean.t2, t12.growth) %>%
+        group_by(Class.ID) %>%
+        #add centered mean metric
+        mutate(t12.growth.center = round(t12.growth - av(t12.growth), 22)) %>%
+        ungroup()
+
+#anonymize and randomly samplethe data for display
+year.report.anon <- year.report %>%
+        select( -Class.ID) %>%
+        sample_n(100) %>%
+        mutate(Student.ID = "1000****")
+        
+        
+datatable(year.report.anon, caption = "Centralized Improvement Metric",
+          class = 'compact', rownames = FALSE)
+```
+
+## The Comments
+
+<br><br>
+
+The general format for XIS trimester comments for students is two paragraphs:
+
+* A paragraph about what happened in class that trimester generally
+* A paragraph of three sentences each of which performs the following function of saying something the student:
+
+    + has done well,
+    + the student struggles with, and
+    + can do to improve that with which they struggle. 
+
+A typical comment reads like this:
+
+*The MYP sixth grade science program at XIS is an intellectually challenging program that results in creative, critical, reflective thinkers.  It is designed to help students make connections between science and the real world.  Students are developing approaches to learning skills for thinking before writing responses and communicating using tables and graphs.  The first trimester focused on cells and disease.  The key concept was form.  Three criteria A-C were covered with the following summative assessments:  Criterion A- Unit test, Criterion B & C- design lab on yeast and Criterion C ' vertical leap investigation. *
+
+*\*\*\*\*[^4] is willing to work in class.  He has shown an improvement in submission and achievement in assessment tasks over the first trimester.  Further attention to the detail required for different assessment criteria should allow \*\*\*\* continued improvement.  He is encouraged to write independently first so that advice can be provided on written work rather than risk forgetting how the verbal advice affects his achievement level.*
+
+<br><br>
+
+As teachers, when we write these comments, we hope that the student and his/her parents reads the comment, assimilate the feedback and improve. We have no way to know for sure that this happens. But I set out to learn more...
+
+A breakdown of the comments from trimester 1. Number of
+* Students: 133
+* Reports: 1066
+* Words: 72,921
+
+
+Let's start by getting the top 10 words that 
+
+```{r top words, warning = FALSE}
+
+t1.corpus <- GetReportsDFfromMBcsv("data/t1 comments.csv") %>%
+        AnonymizeReport() %>%
+        GetCorpusFromReportDF()
+
+t1.top10 <- t1.corpus %>%
+        DocumentTermMatrix() %>%
+        CollapseAndSortDTM() %>%
+        head(10) %>%
+        select(Words, freq) %>%
+        mutate( per.1000 = round(1000 * freq / 72921,2))
+```
+
+```{r top words - table, echo = FALSE}
+kable(t1.top10, col.names = c("Words", "Frequency", "(per 1000 words)"),
+      caption = "T1 Comments: Top 10 Most Word Used Words")
+```
+
+
+<br><br>
+
+Wow, how insightful! (not).     Let's look instead at n-grams (i.e. phrases). 
+
+```{r top phrases, warning = FALSE}
+
+#Set tokenizer funciton to phrases 4- to 8-words in length
+DersTokenizer <- function(x) {NGramTokenizer(x, Weka_control(min = 4, max = 8))}
+options(mc.cores=1) #strange RJava workaround
+
+
+t1.top1000 <- t1.corpus %>% 
+        DocumentTermMatrix(control=list(tokenize = DersTokenizer)) %>%
+        CollapseAndSortDTM() %>%
+        mutate(length = CountWords(Words)) %>%
+        mutate(LenNorm = length * freq) %>%
+        arrange(desc(LenNorm)) %>%
+        head(1000)
+
+t1.pruned <- GetPrunedList(t1.top1000, 100)
+
+```
+
+```{r top phrases - table, echo = FALSE}
+
+kable(t1.pruned , col.names = c("Phrases", "Frequency X Length"),
+      caption = "T1 Comments: Top 10 Most Word Used Phrases -- weighted by length")
+```
+
+<br><br>
+
+Now we are getting somewhere! These are the phrases that were most used to describe students in the first trimester.
+
+What I want to do now is look at compare two groups and the language used to describe each. Student who were in the:
+* Top 25% in terms of improvement, and
+* Bottom 25% in terms of improvement.
+
+##Putting it All Together
+
+```{r top & bottom lists}
+
+
+year.report <- year.report %>%
+    #take only needed columns
+    select(Student.ID, Class.ID:Teacher,
+               CriMean.t1, CriMean.t2, t12.growth, t12.growth.center) %>%
+    #add quartile column based on centered growth
+    within(t12.growth.center.quartile <- as.integer(cut(t12.growth.center,
+                                      quantile(t12.growth.center, probs=0:4/4,
+                                      na.rm = TRUE), include.lowest=TRUE))) %>%
+    #add index to crossref w/ corpus
+    mutate(ID.SUB = paste(Student.ID, Subject))
+
+#get 4 quartiles of ID.SUB's 
+quarts <- c(1,2,3,4)
+quartiles <- lapply(quarts, function(x) {
+        year.report %>% filter(t12.growth.center.quartile == x) %>%
+                .$ID.SUB
+})
+
+#paste each quartile's comments into one comment
+quartile.comments <- lapply(quartiles, function(x) {
+        idx <- t1.corpus %>% meta(tag = "ID.SUB") %in% x
+        do.call(paste,content(t1.corpus[idx]))
+})
+
+topbot.comments <- quartile.comments[-c(2,3)]
+
+#make corpus (1 quartile = 1 document)
+topbot.corpus <- VectorSource(topbot.comments) %>% Corpus
+
+#make dtc from corpus
+all.tfidf <- GetAllTfIdfMatricesFromCorpus(topbot.corpus, 2,6, norm = TRUE)
+
+all.pruned <- lapply(all.tfidf, GetPrunedList, prune_thru = 200)
+
+top <- all.pruned[[1]] %>%
+  transmute(ngrams, Score = tfidfXlength * 100000) %>%
+  filter(Score >= 16)
+  
+bottom <- all.pruned[[2]]  %>%
+  transmute(ngrams, Score = tfidfXlength * 100000) %>%
+  filter(Score >= 16)
+
+kable(top)
+kable(bottom)
+```
+
+***
+#Findings
+
+<br><br>
+
+This is what I found  
+
+***
+#Evaluation
+
+<br><br>
+
+This is how good of a job I did.
+
+***
+# References  & Footnotes
+[^1]: asdfasdfasdfasdf
+[^2]: The average growth should be the difference between the Criteria Means of trimester one and two but the average growth excludes mid-year students who: 1) typically don't do well in their 1st trimester of MYP and 2) are not represented in the T1-T2 growth statistic.
+[^3]: A lot of assumptions going on here....
+[^4]: Name removed for privacy
